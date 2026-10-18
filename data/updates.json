@@ -1,0 +1,10 @@
+[
+  {
+    "version": "0.1",
+    "date": "October 19, 2026",
+    "title": "Beta Release \"Pidato Pertanggungjawaban\"",
+    "notes": [
+      "Expect some bugs and missing features, but the game is playable and the core mechanics are in place.<br><font color='#ff0000'>This is a beta release, so please report any bugs you find!</font><br><br><font color='#000080'><b>ROADMAP (in order of priority):</b></font> <ul><li>Indonesian translation, alongside reworked localization.</li><li>1999 Presidential Election right after the Accountability Speech (Three-way, Four-way, or Five-way election)</li><li>Dynamic Epilogues based on player choices.</li><li>Compressing image and music files so they don't consume too much storage.</li><li>Polishing the gameplay experience.</li><li>Adding more themes and customisation</li><li>Modding support.</li><li>Adding more achievements</li><li><font color='#ff0000'>(NOT FINAL) Add a Foreign Affairs interaction</li><li>(NOT FINAL) Rework the gameplay to be more dynamic</font></ul>"
+    ]
+  } 
+]

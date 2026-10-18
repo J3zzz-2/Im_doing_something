@@ -1,0 +1,199 @@
+{
+  "name": "Fraksi PDI Perjuangan<br>(Megawati)",
+  "short": "Megawati",
+  "seats": 153,
+  "affinity": -10,
+  "image": "photo/megawati.png",
+  "coverImage": "photo/faction/pdip.png",
+  "summary": "<font color=\"#C0392B\"><b>The Indonesian Democratic Party of Struggle</b></font>, led by the resolute <font color=\"#C0392B\"><b>Megawati Sukarnoputri</b></font>, stands as the leading force of Reformasi and the secular nationalist movement, having won roughly 34% of the vote and around 153 DPR seats in the June 1999 election. That total is more than any other party managed by a wide margin, nearly twelve points clear of <font color=\"#CC9900\"><b>Golkar</b></font> in second place, and it is the kind of result that has convinced her supporters, quite reasonably, that the whole country has already rendered its verdict. Their argument is simple, and to most ordinary Indonesians it is persuasive: the country voted, <font color=\"#C0392B\"><b>PDI-P</b></font> won decisively, and every month you remain in the Palace afterward is a month borrowed against a mandate that was never yours to begin with. They fundamentally view your administration as an unelected extension of the New Order, a caretaker government installed by Suharto's own resignation rather than earned at the ballot box, and no amount of technocratic competence on your part erases that original sin in their eyes. As David Bourchier and Vedi R. Hadiz highlight in Indonesian Politics and Society, this current political landscape represents a monumental clash between the entrenched remnants of an organicist state ideology and a massive societal push toward modernizing pluralism and true democratic openness.<p></p>Megawati's millions of red shirted Banteng loyalists give the party a street level muscle no other faction can match, muscle that has already been demonstrated more than once this year in crowds outside the Palace and the DPR alike, which makes this bloc dangerous to cross even when its formal vote count in the MPR falls short of an outright majority on its own. Persuading them requires more than the usual backroom deal making that greases most of Senayan's politics. It requires visible proof that the broader public still backs your leadership and not hers, since anything less will read to <font color=\"#C0392B\"><b>PDI-P</b></font>'s base as exactly the kind of elite maneuvering Reformasi was supposed to end once and for all. <font color=\"#0000FF\"><b>If public opinion swings decisively and publicly behind you, their representatives may be politically compelled to temper their hostility,</b></font> however reluctantly and however much it costs them internally, but they will never forget, and never quite forgive, that they came first in the voting and you did not. Other than that, <font color=\"#B22222\"><i><b>best leave them be.</b></i></font>",
+  "biography": "<font color=\"#C0392B\"><b>Megawati Sukarnoputri</b></font> is the second child and eldest daughter of Sukarno, Indonesia's founding president. She has spent much of the New Order era deliberately kept on the margins of politics by a regime that never fully trusted the family name she carried. Elected chairwoman of the old <font color=\"#C0392B\"><b>Indonesian Democratic Party</b></font> at an extraordinary congress in Surabaya in December 1993, she quickly became a magnet for the discontent Suharto's government could no longer fully suppress, drawing crowds that had far less to do with her own political program than with what her surname represented to a country still nursing old grievances against the man who had displaced her father.<p></p>In June 1996, the regime backed a rival congress in Medan that installed a government friendly chairman, <font color=\"#704d00\"><b>Suryadi</b></font>, in her place, and on July 27, 1996, <font color=\"#704d00\"><b>Suryadi's</b></font> supporters, escorted by security forces, stormed the party's Jakarta headquarters on Jalan Diponegoro to evict <font color=\"#C0392B\"><b>Megawati's</b></font> occupying loyalists. The assault, remembered as the <font color=\"#B22222\"><b>Kudatuli tragedy</b></font>, killed several people, injured hundreds more, and triggered two days of rioting across the capital, but in the way these things sometimes turn out, it also made <font color=\"#C0392B\"><b>Megawati</b></font> into the country's most visible symbol of democratic resistance almost overnight, transforming a party leadership dispute into a national cause. She rebuilt her movement as the <font color=\"#C0392B\"><b>Indonesian Democratic Party of Struggle (PDI-P)</b></font> and rode the Reformasi wave straight to first place in the 1999 legislative elections, a result few would have predicted for her even five years earlier. She and her millions of loyal Banteng supporters believe the presidency is now hers by right, earned rather than merely claimed, and they view you as little more than a placeholder standing between her and a victory she feels, with considerable public sympathy behind her, that she has already won at the ballot box. For <font color=\"#C0392B\"><b>PDI-P</b></font>, the political openness of the post-1998 era is the realization of a long suppressed democratic struggle.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Reluctant Ally",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Open to dialogue",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Ambivalent",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Guarded",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Skeptical",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Hostile",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Closed off",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "pdip_cabinet",
+      "text": "Reserve a meaningful share of the next cabinet reshuffle for names PDI-P itself would choose",
+      "cost": 30,
+      "minStat": { "key": "cendana", "val": 40 },
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "PDI-P has never held real executive power in the New Order's 32-year history, a fact its own economic and legal cadres, several of them respected professionals rather than career politicians, have not forgotten. Signal, through whatever channel Taufik Kiemas and the party's inner circle find credible, that a share of the next reshuffle, not simply as token junior posts, is theirs to fill on their own terms. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font> <font color=\"#B22222\"><b>This will anger Golkar and ABRI.</b></font>",
+      "effects": {
+        "pdip_favor": 1,
+        "pdip": 18,
+        "golkar_akbar": -12,
+        "mil": -8,
+        "abri": -8,
+        "poros_tengah": -5,
+        "other_parties": -4,
+        "pkb": -4,
+        "ppp": -4,
+        "utusan_daerah": -4,
+        "ref": 15,
+        "cendana": -6,
+        "intl": 4,
+        "stab": 2
+      },
+      "alertMsg": "Megawati's deputies weigh the offer carefully rather than eagerly, aware of how it will look to their own base, but ultimately accept the postings. PDI-P's public stance softens noticeably in the days that follow, while Golkar treats the arrangement as an outright betrayal."
+    },
+    {
+      "id": "pdip_regional",
+      "text": "Instruct the Ministry of Home Affairs to stop contesting local PDI-P election certifications",
+      "cost": 15,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Alongside the June national vote, provincial and district legislatures across the archipelago were also choosing their own regional leadership, and in a number of places where PDI-P's local branches won convincingly, Golkar-aligned officials still sitting in the Home Affairs bureaucracy have quietly slow-walked the formal certification. Order that slow-walking to stop.",
+      "effects": {
+        "pdip": 8,
+        "golkar_akbar": -6,
+        "utusan_daerah": -2,
+        "ref": 4,
+        "stab": 3,
+        "pop": 3,
+        "intl": 2,
+        "golkar_habibie": 1
+      },
+      "alertMsg": "The certifications move forward with unremarkable speed once the instruction reaches the relevant desks. Megawati's camp registers the gesture without much fanfare. It is, after all, simply what should already have happened."
+    },
+    {
+      "id": "pdip_kudatuli",
+      "text": "Address the July 27, 1996 Kudatuli tragedy with formal state acknowledgment",
+      "cost": 24,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Authorize formal state acknowledgment and restitution for what happened at the party's Jalan Diponegoro headquarters on July 27, 1996, when security forces backed a rival congress and violently evicted Megawati's loyalists. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font> <font color=\"#B22222\"><b>Angers Golkar's old guard and ABRI.</b></font>",
+      "effects": {
+        "pdip": 16,
+        "pdip_favor": 1,
+        "ref": 15,
+        "golkar_akbar": -10,
+        "mil": -8,
+        "abri": -8,
+        "stab": -2,
+        "intl": 4,
+        "pop": 6,
+        "cendana": -6,
+        "golkar_habibie": 2,
+        "utusan_golongan": 4
+      },
+      "alertMsg": "PDI-P's leadership treats the gesture as long overdue rather than generous, but it lands anyway. Golkar figures and entrenched elites implicated in the 1996 assault are considerably less pleased to see the matter reopened."
+    },
+    {
+      "id": "pdip_kiemas",
+      "text": "Open a backchannel line through Taufik Kiemas",
+      "cost": 12,
+      "repeatable": true,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Rather than approach Megawati or her formal party apparatus directly, route a private overture through her husband, Taufik Kiemas, whose pragmatic role in her political operation is considerably larger than his lack of an executive title suggests.",
+      "effects": {
+        "pdip": 7,
+        "ref": 2,
+        "pop": 1,
+        "stab": 2
+      },
+      "alertMsg": "The conversation goes further than expected, conducted over a long dinner rather than a formal meeting, and something resembling a pragmatic understanding is reached."
+    },
+    {
+      "id": "pdip_pansus_bankbali",
+      "text": "Grant the Pansus Bank Bali special committee full access to the withheld banking records",
+      "mutexGroup": "bank_bali_audit",
+      "locksGroup": true,
+      "cost": 22,
+      "repeatable": false,
+      "maxTurn": 16,
+      "minTurn": 7,
+      "description": "The DPR's special investigating committee into the Bank Bali affair has spent weeks requesting documents that keep arriving late or redacted. PDI-P's delegates sit on that committee and have been among its loudest voices. Order every relevant ministry and the central bank to hand over what the committee has asked for, in full. <font color=\"#B22222\"><b>Locks out Golkar's attempts to delay the audit.</b></font> <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "pdip": 16,
+        "pdip_favor": 1,
+        "golkar_akbar": -12,
+        "cendana": -12,
+        "ref": 15,
+        "intl": 10,
+        "econ": 3,
+        "pop": 6,
+        "utusan_golongan": 5
+      },
+      "alertMsg": "PDI-P's committee members treat the disclosure as vindication of a case they had been pressing since August, and the party's tone toward your administration warms noticeably. Golkar figures implicated in the paper trail scramble to distance themselves."
+    },
+    {
+      "id": "pdip_sukarno_memorial",
+      "text": "Endorse a state-sponsored memorial elevating Sukarno's public legacy",
+      "cost": 15,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The founding president's name and image were deliberately kept out of official commemoration for most of the New Order, a marginalization Megawati's supporters experience as a personal as much as a political grievance. Lend your office's backing to a state-sponsored monument and commemorative program honoring Sukarno.",
+      "effects": {
+        "pdip": 10,
+        "pop": 6,
+        "golkar_akbar": -3,
+        "cendana": -3,
+        "ref": 3,
+        "stab": 3,
+        "utusan_golongan": 2
+      },
+      "alertMsg": "The gesture is received warmly by Megawati's base, several of whom note that it costs the state very little and means a great deal to them personally. Old New Order loyalists within Golkar grumble privately."
+    },
+    {
+      "id": "pdip_final_appeal",
+      "text": "Make a last, personal appeal directly to Megawati ahead of the vote",
+      "cost": 0,
+      "repeatable": false,
+      "maxTurn": 22,
+      "minTurn": 20,
+      "description": "There is no more time for intermediaries, cabinet offers, or committee access. With the Assembly's verdict on your accountability speech approaching, request a final face-to-face meeting with Megawati herself, one leader to another, and ask her plainly what it would take for PDI-P's delegates to vote 'Accept' rather than 'Reject.' <font color=\"#B22222\"><b>Calls in all accumulated PDI-P favors.</b></font>",
+      "effects": {
+        "pdip": 15,
+        "stab": 3
+      },
+      "alertMsg": "Megawati hears you out in characteristic, unreadable silence before offering a polite nod. Whatever understandings you have built with Diponegoro over the past four months will now be tested on the Assembly floor."
+    }
+  ]
+}

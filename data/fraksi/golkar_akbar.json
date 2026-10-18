@@ -1,0 +1,196 @@
+{
+  "name": "Fraksi Karya Pembangunan<br>(DPP Slipi - Akbar)",
+  "short": "Tanjung",
+  "seats": 80,
+  "affinity": 30,
+  "image": "photo/tanjung.png",
+  "coverImage": "photo/faction/golkar.png",
+  "summary": "Under the shrewd stewardship of <font color=\"#CC9900\"><b>Akbar Tandjung</b></font> at the party's <font color=\"#CC9900\"><b>DPP Slipi</b></font> headquarters, this wing of <font color=\"#CC9900\"><b>Golkar</b></font> represents the entrenched political machinery inherited wholesale from the <font color=\"#704d00\"><b>New Order</b></font>: the provincial governors, regency bosses, career bureaucrats, and patronage networks that delivered six consecutive stage-managed elections over thirty-two years and are now scrambling to survive inside a multiparty system none of them ever wanted. For decades, the <font color=\"#CC9900\"><b>Banyan Tree</b></font> served as the civilian arm of an authoritarian <font color=\"#704d00\"><b>organicist state</b></font>, enforcing bureaucratic monoloyalty from the ministries down to the village hall. Taking 22.4% of the national vote in June—a bruising but survivable second-place finish behind <font color=\"#C0392B\"><b>PDI-P</b></font>—is treated privately by <font color=\"#CC9900\"><b>Akbar</b></font> as vindication that his cautious rebranding saved the party from the outright ban that street demonstrators were demanding barely a year ago.<p></p>Unlike your outer-island and <font color=\"#006400\"><b>ICMI</b></font> loyalists, <font color=\"#CC9900\"><b>Akbar's Slipi machine</b></font> feels no personal debt to you whatsoever. Their loyalty runs strictly to the party apparatus itself: to preserving its hold over state enterprises, shielding its regional treasurers from <font color=\"#8B0000\"><b>KKN</b></font> prosecutions, and securing a seat at whatever coalition table forms after October. You are, in their calculation, merely the current occupant of an office <font color=\"#CC9900\"><b>Golkar</b></font> needs to remain adjacent to for as long as it pays dividends. <font color=\"#0000FF\"><b>A stable macroeconomy, insulated patronage channels, and a credible path to keeping the party in power speak far louder to these seasoned operators than any sermon on democratic reform.</b></font> If backroom vote-counting convinces the provincial chairmen that your presidency has become a sinking ship, <font color=\"#CC9900\"><b>Akbar</b></font> will pivot the machine toward a more viable horse without a second thought.",
+  "biography": "A consummate political survivor who cut his teeth leading the <font color=\"#006400\"><b>Islamic Students' Association (HMI)</b></font> during the 1966 student uprising, <font color=\"#CC9900\"><b>Djandji Akbar Zahiruddin Tandjung</b></font> helped found the youth coalition <font color=\"#CC9900\"><b>KNPI</b></font>, joined <font color=\"#CC9900\"><b>Golkar</b></font> in 1974, and entered the DPR in 1977. <font color=\"#704d00\"><b>Suharto</b></font> rewarded his quiet organizational discipline with consecutive cabinet portfolios—Minister of Youth and Sports from 1988 to 1993, then Minister of Public Housing from 1993 until the regime's collapse in May 1998. You brought him into your own cabinet as <font color=\"#000080\"><b>Minister/State Secretary</b></font>, and at Golkar's tumultuous July 1998 Extraordinary Congress, with the party reeling from public fury and facing demands for its dissolution, your allies backed <font color=\"#CC9900\"><b>Akbar</b></font> to defeat retired General <font color=\"#556B2F\"><b>Edi Sudradjat</b></font> for the party chairmanship.<p></p>Operating out of <font color=\"#CC9900\"><b>Slipi</b></font>, he repackaged the party around a <font color=\"#CC9900\"><b>'New Golkar' paradigm</b></font>, shedding just enough <font color=\"#704d00\"><b>New Order</b></font> &amp; <font color=\"#704d00\"><b>Jalan Cendana</b></font> baggage to hold onto its rural and outer-island bastions in the June 1999 ballot. Beneath his polite, softly spoken demeanor sits one of the most calculating parliamentarians in Senayan. He harbors no deep ideological attachment to you or to your reform agenda; his overriding objective is ensuring <font color=\"#CC9900\"><b>Golkar</b></font> remains the indispensable kingmaker of Indonesian politics, even if that requires trading away your presidency behind the secret-ballot curtain when the <font color=\"#000080\"><b>MPR General Session</b></font> convenes.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Fully Behind Habibie",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Backing Habibie, For Now",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Weighing Habibie's Chances",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Losing Faith in Habibie",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Looking Past Habibie",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Preparing to Abandon Habibie",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Ready to Dump Habibie",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "golkar_patronage",
+      "text": "Assure the party's regional chairmen that traditional patronage arrangements will continue uninterrupted",
+      "cost": 28,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "For three decades, holding a <font color=\"#CC9900\"><b>Golkar</b></font> provincial chairmanship came bundled with privileged access to public works tenders, forestry concessions, and regional bank credit—an ecosystem so entrenched that most local party bosses consider it the natural order of governance. Send word through <font color=\"#CC9900\"><b>DPP Slipi's</b></font> internal couriers that your administration has no intention of turning off the spigot. <font color=\"#B22222\"><b>This will severely damage your Reformasi credibility and anger opposition parties.</b></font> <font color=\"#0000FF\"><b>Grants 1 Favor with Golkar (Akbar).</b></font>",
+      "effects": {
+        "golkar_akbar": 20,
+        "golkar_akbar_favor": 1,
+        "ref": -10,
+        "pop": -8,
+        "golkar_habibie": 5,
+        "cendana": 5,
+        "abri": 4,
+        "pdip": -5,
+        "ppp": -4,
+        "pkb": -4,
+        "poros_tengah": -4,
+        "other_parties": -4,
+        "utusan_daerah": 4,
+        "econ": 3
+      },
+      "alertMsg": "Akbar Tandjung receives the assurance with quiet satisfaction, and Golkar's provincial chairmen fall back into line almost immediately. The reformist press—whose reporters spent 1998 marching to abolish these exact networks—treats the leak as proof that KKN has merely changed its letterhead."
+    },
+    {
+      "id": "golkar_threaten",
+      "text": "Subtly remind Slipi's leadership of the sensitive financial dossiers sitting on your desk",
+      "cost": 12,
+      "repeatable": true,
+      "maxTurn": 21,
+      "minTurn": 6,
+      "description": "The unredacted <font color=\"#FFB600\"><b>PricewaterhouseCoopers (PwC)</b></font> forensic trail on the <font color=\"#8B0000\"><b>Bank Bali</b></font> transfer—alongside <font color=\"#000080\"><b>Attorney General's Office</b></font> files implicating <font color=\"#CC9900\"><b>Golkar's</b></font> deputy treasurer and off-budget campaign accounts—have not gone anywhere. Let <font color=\"#CC9900\"><b>Akbar Tandjung</b></font> understand, without anything so crude as an explicit threat, that Palace discretion over which files remain sealed depends on his caucus's discipline.",
+      "effects": {
+        "golkar_akbar": 7,
+        "cendana": -5,
+        "stab": -2,
+        "golkar_habibie": 3,
+        "pop": 1,
+        "ref": 1
+      },
+      "alertMsg": "The message lands in Slipi exactly as intended. Akbar's lieutenants dial back their public criticism overnight, and the Cendana-linked operators most exposed by the audit quietly distance themselves from opposition Whip counts."
+    },
+    {
+      "id": "golkar_congress",
+      "text": "Throw Bina Graha's weight behind Akbar Tandjung's continued chairmanship of the party",
+      "cost": 22,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "<font color=\"#CC9900\"><b>Golkar's</b></font> internal hierarchy remains brittle beneath the surface, with outer-island <font color=\"#CC9900\"><b>Irama Tersedak</b></font> loyalists openly agitating to unseat <font color=\"#CC9900\"><b>Akbar Tandjung</b></font> before the General Session. Signal through <font color=\"#000080\"><b>Bina Graha</b></font> channels that the Palace recognizes Akbar's control over the central party board, trading away your own loyalists' ambitions to buy peace with the <font color=\"#CC9900\"><b>Slipi</b></font> machine. <font color=\"#B22222\"><b>Disappoints Loyalist Golkar delegates.</b></font>",
+      "effects": {
+        "golkar_akbar": 15,
+        "cendana": 5,
+        "golkar_habibie": -8,
+        "ref": -4,
+        "stab": 2,
+        "abri": 3
+      },
+      "alertMsg": "Word from the Palace steadies Akbar's grip over the central board and quiets talk of an extraordinary party coup. Your own Sulawesi and ICMI loyalists, however, are bitter that you strengthened the very faction leader most likely to betray you."
+    },
+    {
+      "id": "golkar_bumn",
+      "text": "Distribute state-owned enterprise (BUMN) board seats to Golkar's provincial powerbrokers",
+      "cost": 24,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The supervisory boards of Indonesia's largest <font color=\"#000080\"><b>State-Owned Enterprises (BUMN)</b></font>—from <font color=\"#000080\"><b>Pertamina</b></font> and <font color=\"#000080\"><b>Telkom</b></font> to state banks still on <font color=\"#8B0000\"><b>BLBI</b></font> life support—have lucrative commissioner vacancies. Fill a slate of them with nominees <font color=\"#CC9900\"><b>Akbar Tandjung's</b></font> provincial chairmen have been quietly submitting for months. <font color=\"#B22222\"><b>Undermines Economic Health and Reformasi Credibility.</b></font> <font color=\"#0000FF\"><b>Grants 1 Favor with Golkar (Akbar).</b></font>",
+      "effects": {
+        "golkar_akbar": 16,
+        "golkar_akbar_favor": 1,
+        "ref": -12,
+        "econ": -8,
+        "golkar_habibie": 2,
+        "cendana": 5,
+        "abri": 4,
+        "pdip": -5,
+        "poros_tengah": -5,
+        "intl": -3,
+        "pop": -2,
+        "utusan_daerah": 3
+      },
+      "alertMsg": "The commissioner decrees are signed without fanfare, and Golkar's regional barons treat the sinecures as proof that the old spoils system still works. Market analysts and IMF monitors, watching party operatives installed atop fragile state corporations, are far less forgiving."
+    },
+    {
+      "id": "golkar_pwc_shelve",
+      "text": "Stall the unredacted <font color=\"#FFB600\"><b>PricewaterhouseCoopers</b></font> Bank Bali report before it reaches the DPR",
+      "mutexGroup": "bank_bali_audit",
+      "locksGroup": true,
+      "cost": 12,
+      "repeatable": false,
+      "maxTurn": 16,
+      "minTurn": 7,
+      "description": "The full <font color=\"#FFB600\"><b>PwC forensic audit</b></font> into the Rp 546 billion <font color=\"#8B0000\"><b>Bank Bali</b></font> fee names senior <font color=\"#CC9900\"><b>Golkar</b></font> treasurers and campaign operators whom <font color=\"#CC9900\"><b>DPP Slipi</b></font> is desperate to keep out of televised parliamentary hearings. Use procedural reviews at the <font color=\"#000080\"><b>Supreme Audit Agency (BPK)</b></font> to hold back the unredacted annex. <font color=\"#B22222\"><b>Permanently locks out handing the unredacted files to PDI-P's Pansus committee.</b></font> <font color=\"#0000FF\"><b>Grants 1 Favor with Golkar (Akbar).</b></font>",
+      "effects": {
+        "golkar_akbar": 14,
+        "golkar_akbar_favor": 1,
+        "cendana": 5,
+        "ref": -10,
+        "intl": -6,
+        "pop": -6,
+        "pdip": -10,
+        "econ": -3,
+        "golkar_habibie": -2
+      },
+      "alertMsg": "The procedural bottleneck buys Golkar's treasury the breathing room it craved, and Akbar makes sure the debt is noted in Slipi. PDI-P's investigators erupt over the cover-up, and foreign creditors warn that obstructing the audit jeopardizes future bailout tranches."
+    },
+    {
+      "id": "golkar_own_nomination",
+      "text": "Press Golkar's National Leadership Meeting (Rapimnas) to ratify you as its sole candidate",
+      "cost": 20,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 4,
+      "description": "Several provincial chapters inside <font color=\"#CC9900\"><b>Akbar Tandjung's</b></font> camp have floated nominating Akbar himself—or even <font color=\"#556B2F\"><b>General Wiranto</b></font>—should your poll numbers falter. Demand that the party's <font color=\"#CC9900\"><b>Rapimnas</b></font> formally bind all 120 DPR delegates to your candidacy now, locking the <font color=\"#CC9900\"><b>Banyan Tree's</b></font> institutional prestige to your survival before rival brokers can split the caucus. <font color=\"#0000FF\"><b>Grants 1 Favor with Golkar (Akbar).</b></font>",
+      "effects": {
+        "golkar_akbar": 12,
+        "golkar_akbar_favor": 1,
+        "golkar_habibie": 15,
+        "stab": 3
+      },
+      "alertMsg": "After marathon backroom bargaining at Slipi, the Rapimnas formally ratifies you as Golkar's sole presidential nominee. Your loyalists celebrate the resolution as decisive institutional cover, even if Akbar's lieutenants keep their options open in private."
+    },
+    {
+      "id": "golkar_final_appeal",
+      "text": "Summon Akbar Tandjung on the eve of the roll call and demand the Slipi machine hold the line",
+      "cost": 0,
+      "repeatable": false,
+      "maxTurn": 22,
+      "minTurn": 20,
+      "description": "Every <font color=\"#000080\"><b>BUMN</b></font> board seat, every shielded audit file, and every quiet concession you have extended to <font color=\"#CC9900\"><b>DPP Slipi</b></font> over the past four months comes down to tonight's secret ballot in <font color=\"#000080\"><b>Senayan</b></font>. Summon <font color=\"#CC9900\"><b>Akbar Tandjung</b></font> face-to-face and demand he enforce strict party discipline over his 80 delegates when the roll is called. <font color=\"#0000FF\"><b>Automatically cashes in any unspent Favors with Golkar (Akbar) for a massive loyalty surge.</b></font>",
+      "effects": {
+        "golkar_akbar": 18,
+        "golkar_habibie": 5,
+        "cendana": 4
+      },
+      "alertMsg": "Akbar Tandjung offers the practiced, solemn reassurance of a lifelong machine politician—promising to work the floor until dawn while betraying nothing of what he has privately discussed with Amien Rais and Gus Dur."
+    }
+  ]
+}

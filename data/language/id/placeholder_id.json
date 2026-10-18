@@ -1,0 +1,18 @@
+[
+  {
+    "version": "0.1",
+    "date": "16 Oktober 2026",
+    "title": "Build Uji Coba Entah Apa",
+    "notes": [
+      "Build belum stabil dengan kode yang belum dioptimasi, banyak sisa kode tak terpakai, dan ukuran berkas yang masih membengkak atau semacamnya."
+    ]
+  },
+  {
+    "version": "0.1.1",
+    "date": "16 Oktober 2026",
+    "title": "Uji Coba Build Kedua",
+    "notes": [
+      "Memastikan semuanya benar-benar bisa jalan."
+    ]
+  }
+]

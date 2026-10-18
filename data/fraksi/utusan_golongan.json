@@ -1,0 +1,145 @@
+{
+  "name": "Fraksi Utusan Golongan",
+  "short": "U. Golongan",
+  "seats": 65,
+  "affinity": 35,
+  "image": "photo/usdar.png",
+  "coverImage": "photo/faction/usdar.png",
+  "summary": "The Utusan Golongan consists of 65 appointed delegates representing a wide range of functional, societal, and minority groups, including labor unions, women's organizations, intellectuals, farmers, and religious minorities. Under the New Order, as meticulously detailed by Vedi R. Hadiz in Workers and the State in New Order Indonesia, this corporatist social and political framework was deliberately engineered to constrain the development of independent social movements, particularly among the rapidly expanding urban industrial working class. The strict labor controls of the past three decades were a direct legacy of the historical struggles between the military apparatus and leftist organizations prior to 1965, ensuring that the state held a monopoly over societal representation. For decades, these functional groups were heavily curated to rubber stamp executive mandates, reflecting what David Bourchier and Vedi R. Hadiz describe in Indonesian Politics and Society as an organicist state ideology designed to marginalize dissent and enforce an artificial, state sanctioned harmony. However, the 1999 class of Utusan Golongan looks meaningfully different from its predecessors. It features genuine civil society leaders, longtime activists, and independent intellectuals who actively participated in the 1998 uprisings that shattered the old corporatist facade. They tend to view themselves as the moral conscience of the MPR, a self conception they take quite seriously.",
+  "biography": "Historically, the so called functional groups were heavily curated by the New Order regime to rubber stamp Suharto's mandates while providing only the thinnest veneer of genuine societal representation, a system designed more for the appearance of pluralism than the substance of it. As Vedi R. Hadiz has exhaustively documented, the state's approach to these groups, especially organized labor, was characterized by stringent controls and a corporatist structure that actively prevented independent organizing. However, the 1999 class of Utusan Golongan broke this mold completely. Featuring genuine civil society leaders, longtime activists, and independent intellectuals who actually participated in the 1998 uprisings, this bloc now includes voices that were previously silenced or imprisoned by the state. Their presence in the MPR is a direct result of the political openness and democratization processes highlighted by Bourchier and Hadiz, marking a profound shift away from the illiberal, organicist state models of the past.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Supportive",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Favorable",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Observing",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Skeptical",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Vocal Critics",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Protesting",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Irreconcilable",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "golongan_rights",
+      "text": "Expand executive protections for civil liberties, legal aid (YLBHI), and NGOs",
+      "cost": 18,
+      "repeatable": true,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Issue ongoing executive protections for independent legal aid foundations, agrarian advocates, and minority rights organizations.",
+      "effects": {
+        "utusan_golongan": 14,
+        "ref": 6,
+        "mil": -6,
+        "abri": -5,
+        "pop": 2,
+        "intl": 2
+      },
+      "alertMsg": "Civil society groups applaud the measure, rallying behind you, though conservative military officers grumble about legal constraints."
+    },
+    {
+      "id": "golongan_komnas",
+      "text": "Publicly back Komnas HAM's independent inquiries",
+      "cost": 18,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Attach your own name and office visibly to the ongoing work of the National Commission on Human Rights (Komnas HAM). <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "utusan_golongan": 16,
+        "utusan_golongan_favor": 1,
+        "ref": 7,
+        "mil": -6,
+        "abri": -5,
+        "intl": 4,
+        "pop": 2
+      },
+      "alertMsg": "Civil society figures within the Assembly treat the endorsement as a genuine signal of reformist intent."
+    },
+    {
+      "id": "golongan_ilo_labor",
+      "text": "Implement ILO Convention No. 87 & recognize independent labor federations",
+      "cost": 16,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Break the New Order's state-sanctioned union monopoly (SPSI) in practice by issuing full implementing regulations for ILO Convention No. 87 and granting formal bargaining recognition to independent unions. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "utusan_golongan": 16,
+        "utusan_golongan_favor": 1,
+        "intl": 8,
+        "pop": 5,
+        "ref": 5,
+        "econ": -2,
+        "abri": -4
+      },
+      "alertMsg": "Independent labor federations and international observers alike hail the regulations as the end of three decades of corporatist labor control."
+    },
+    {
+      "id": "golongan_pakpahan",
+      "text": "Invite rehabilitated labor leader Muchtar Pakpahan to advise on labor law reform",
+      "cost": 10,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Having freed Muchtar Pakpahan from Cipinang Prison in May 1998, invite the SBSI union founder to Merdeka Palace in a formal advisory capacity on drafting the new Manpower Bill.",
+      "effects": {
+        "utusan_golongan": 12,
+        "pop": 4,
+        "ref": 4,
+        "intl": 3,
+        "abri": -3
+      },
+      "alertMsg": "The gesture is received as genuine by labor activists and civic delegates who remember what his original subversion conviction cost him."
+    },
+    {
+      "id": "golongan_final_appeal",
+      "text": "Issue a final, direct appeal to the Assembly's civil society delegates",
+      "cost": 0,
+      "repeatable": false,
+      "maxTurn": 22,
+      "minTurn": 20,
+      "description": "This bloc has made clear throughout the session that it responds to conviction rather than patronage. Address the 65 Utusan Golongan delegates directly and ask them to judge your reform record on its merits.",
+      "effects": {
+        "utusan_golongan": 18,
+        "ref": 4,
+        "pop": 2,
+        "intl": 2
+      },
+      "alertMsg": "The delegates receive the appeal with careful, deliberative seriousness, and your civil society allies rally their caucus ahead of the roll call."
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "name": "Fraksi Kebangkitan Bangsa<br>(Gus Dur)",
+  "short": "PKB",
+  "seats": 51,
+  "affinity": 30,
+  "image": "photo/jalil.png",
+  "coverImage": "photo/faction/pkb.png",
+  "summary": "The National Awakening Party, <font color=\"#006400\"><b>PKB</b></font>, serves as the primary political vehicle for Nahdlatul Ulama, Indonesia's largest traditionalist Muslim organization, and while it is officially chaired by Matori Abdul Djalil, its spiritual and political compass is completely and openly dictated by Abdurrahman Wahid, better known as Gus Dur, whose word carries far more weight within the party than any formal title ever could. Capturing 51 seats in June, <font color=\"#006400\"><b>PKB</b></font> represents a massive, heavily rural voting bloc, concentrated primarily in East and Central Java, regions where NU's religious and social networks run deeper than any political party's on its own. The party is ideologically pluralist and vehemently opposed to the imposition of an Islamic state, a stance that puts it at meaningful odds with more conservative elements elsewhere on the Islamic side of the aisle, yet Gus Dur's characteristically unpredictable, wily political maneuvering means <font color=\"#006400\"><b>PKB</b></font> remains, in practice, open to aligning with whoever ultimately serves the goals he has in mind. The intellectual foundation of Gus Dur's pluralism is rooted deeply in the neo-modernist Islamic thought that gained traction during the New Order, advocating for a contextual interpretation of theology that aligns with Indonesian nationalism, a movement well analyzed in contemporary political compilations. In time, and by most accounts sooner rather than later, they will serve as the essential anchor for Gus Dur's own presidential bid, whatever shape that bid eventually takes.",
+  "biography": "Established in 1998 immediately following the fall of Suharto, <font color=\"#006400\"><b>PKB</b></font> was founded by senior NU clerics eager to re-enter the formal political arena after years of enforced distance from it under the New Order's fusion party system. Abdurrahman Wahid, the deeply respected but physically ailing leader of NU, envisioned <font color=\"#006400\"><b>PKB</b></font> as an inclusive, nationalist religious party capable of speaking for traditionalist Muslims without slipping into narrow sectarianism. His vision of Islam heavily contextualizes the Koran and Hadits, allowing for a modern, tolerant society that firmly rejects the older, rigid paradigms. Despite initial expectations that the party would form a dominant coalition with Megawati's <font color=\"#C0392B\"><b>PDI-P</b></font>, expectations rooted largely in Gus Dur and Megawati's long standing personal friendship dating back many years, Gus Dur has instead actively kept his options open, expertly playing the various factions of Jakarta politics against one another in order to position himself as the ultimate indispensable kingmaker of this entire session. His mastery of traditional Javanese political maneuvering and deep theological roots make him one of the most formidable and enigmatic figures in the post-Suharto transition, capable of bridging the severe divides that threaten to tear the newly democratic republic apart.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Loyal to Gus Dur",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Friendly",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Neutral",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Unpredictable",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Distanced",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Opposed",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Hostile",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "pkb_fund",
+      "text": "Route a quiet infusion of development funds toward East Java's pesantren heartland",
+      "cost": 15,
+      "repeatable": true,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "The rural pesantren networks of East Java, and in particular the area around Jombang and the Tebuireng pesantren founded by Gus Dur's own grandfather, form the actual organizational backbone beneath PKB's formal party structure. Direct a discreet infusion of state development funds into that specific stretch of countryside.",
+      "effects": {
+        "pkb": 12,
+        "poros_tengah": 3,
+        "pop": 2,
+        "ref": 1,
+        "utusan_daerah": 2
+      },
+      "alertMsg": "Gus Dur sends his wry, characteristically unpredictable regards through an intermediary, treating the gesture with the mixture of amusement and genuine appreciation for which he is known. The rural clerics whose networks actually deliver PKB's votes are pleased."
+    },
+    {
+      "id": "pkb_gusdur_health",
+      "text": "Extend a discreet offer of international medical assistance to Abdurrahman Wahid",
+      "cost": 15,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "The man whose word actually governs PKB's votes has been left nearly blind by a series of strokes. Arrange, through a private channel rather than any public health ministry announcement, an offer of specialist treatment abroad. <font color=\"#0000FF\"><b>Grants 1 favor (carries over into Poros Tengah).</b></font>",
+      "effects": {
+        "pkb": 15,
+        "pkb_favor": 1,
+        "ref": 5,
+        "poros_tengah": 5,
+        "pop": 2,
+        "ppp": 2
+      },
+      "alertMsg": "The offer is received with characteristic dry humor rather than gratitude exactly, but it is received. Those close to Gus Dur note that the gesture is not the kind of thing he forgets."
+    },
+    {
+      "id": "pkb_ansor",
+      "text": "Coordinate directly with Banser and NU's grassroots security apparatus",
+      "cost": 18,
+      "repeatable": true,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "Nahdlatul Ulama's youth wing maintains its own organized, uniformed security corps across East and Central Java. Rather than routing security concerns in NU strongholds solely through ABRI, open a direct line to this parallel structure.",
+      "effects": {
+        "pkb": 10,
+        "poros_tengah": 3,
+        "stab": 6,
+        "mil": -4,
+        "abri": -3,
+        "ref": 2,
+        "pop": 2
+      },
+      "alertMsg": "The arrangement works smoothly, and NU's own networks calm several potential flashpoints without a single soldier being deployed. ABRI officers briefed on the arrangement grumble privately."
+    },
+    {
+      "id": "pkb_matori_role",
+      "text": "Offer Matori Abdul Djalil a senior cabinet post",
+      "cost": 20,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "PKB's formal chairman holds the title while Gus Dur holds the spiritual command. Offer Matori a significant cabinet post directly to anchor PKB's institutional wing to the Palace. <font color=\"#0000FF\"><b>Grants 1 favor (carries over into Poros Tengah).</b></font>",
+      "effects": {
+        "pkb": 14,
+        "pkb_favor": 1,
+        "golkar_akbar": 2,
+        "ref": 2,
+        "stab": 2
+      },
+      "alertMsg": "Matori accepts with evident pleasure, anchoring PKB's parliamentary leadership closer to the Palace ahead of the October session."
+    },
+    {
+      "id": "pkb_nu_congress",
+      "text": "Sponsor Nahdlatul Ulama's upcoming congress and associated boarding schools",
+      "cost": 15,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "NU's upcoming national congress and the sprawling network of pesantren it oversees across Java require substantial funding. Offer a direct government contribution.",
+      "effects": {
+        "pkb": 12,
+        "poros_tengah": 4,
+        "pop": 4,
+        "econ": -3,
+        "ref": 1,
+        "stab": 2
+      },
+      "alertMsg": "NU's leadership accepts the contribution gratefully, and word of the state's generosity travels through the organization's rural network within days."
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+{
+  "name": "Fraksi Utusan Daerah",
+  "short": "U. Daerah",
+  "seats": 135,
+  "affinity": 35,
+  "image": "photo/usdar.png",
+  "coverImage": "photo/faction/usdar.png",
+  "summary": "The Utusan Daerah constitutes a highly fragmented, uncoordinated conglomerate of 135 regional delegates, precisely five representatives chosen by the provincial legislatures of each of Indonesia's 27 provinces, and that structure alone makes them a genuinely unusual bloc within the MPR, closer to a loose confederation of local interests than anything resembling a disciplined party caucus. Without a centralized leader of any kind to coordinate their votes, they are highly susceptible to shifting political winds and, it must be said, to a certain amount of backroom coercion from whichever faction happens to be courting them hardest in a given week. Fundamentally, and almost without exception, they prioritize the uninterrupted flow of regional development funds, expanded provincial autonomy, and the absolute preservation of civic order across the archipelago.",
+  "biography": "This bloc represents the vast, diverse reality of the Indonesian archipelago that exists well outside the political bubble of Jakarta, a reality that can feel almost entirely separate from the daily maneuvering inside Senayan. Appointed rather than directly elected under the 1999 electoral laws, these provincial governors, indigenous leaders, and local bureaucrats have spent decades funneling natural resource wealth toward the capital while receiving comparatively little in return for their provinces, a grievance that predates Reformasi by a very long margin. With Suharto's iron grip now gone entirely, the provinces have grown visibly restless, and threats of balkanization and ethnic conflict echo from Aceh all the way to Papua.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Secured",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Content",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Split",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Nervous",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Demanding Funds",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Looking For Other Patrons",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Habibie Must Go",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "daerah_revenue_formula",
+      "text": "Rework the oil, gas, and forestry revenue-sharing formula in favor of producing provinces",
+      "cost": 26,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The outer islands that produce the country's oil, gas, timber, and minerals have watched that wealth flow toward Jakarta for decades. Rework the underlying revenue-sharing formula in their favor through Ministry of Finance channels. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "utusan_daerah": 20,
+        "utusan_daerah_favor": 1,
+        "econ": -8,
+        "pdip": -6,
+        "stab": 2,
+        "intl": 2,
+        "ref": 2
+      },
+      "alertMsg": "Governors from Riau, East Kalimantan, and Irian Jaya treat the change as long overdue, and their delegates' posture in the Assembly shifts noticeably in your favor, though Jakarta unitary nationalists grumble."
+    },
+    {
+      "id": "daerah_infra",
+      "text": "Fast-track provincial infrastructure grants",
+      "cost": 18,
+      "repeatable": true,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Approve visible, immediate public works and road-building grants across key outer-island and Javanese provinces.",
+      "effects": {
+        "utusan_daerah": 12,
+        "econ": -4,
+        "pop": 3,
+        "stab": 2
+      },
+      "alertMsg": "The regional infrastructure spending works as intended. Provincial governors gladly instruct their MPR delegates to look favorably on the Palace."
+    },
+    {
+      "id": "daerah_sultan",
+      "text": "Personally court Sultan Hamengkubuwono X of Yogyakarta",
+      "cost": 15,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Extend a personal, visible gesture of respect toward the Sultan of Yogyakarta, whose democratic election as governor and early support for Reformasi in May 1998 give his voice outsized moral weight across the regional delegations.",
+      "effects": {
+        "utusan_daerah": 12,
+        "pop": 5,
+        "ref": 5,
+        "stab": 3,
+        "intl": 1
+      },
+      "alertMsg": "The gesture is received with the careful, unhurried courtesy for which the Yogyakarta court is known, and other regional delegates take quiet note of your respect for provincial leadership."
+    },
+    {
+      "id": "daerah_otonomi_law",
+      "text": "Champion swift implementation of Laws No. 22 and No. 25 on Regional Autonomy",
+      "cost": 18,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The DPR passed Law No. 22 on regional governance and Law No. 25 on fiscal balance in April, but ministerial implementation has moved at a crawl. Push visibly and personally for the implementing regulations to take effect on schedule. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "utusan_daerah": 16,
+        "utusan_daerah_favor": 1,
+        "ref": 8,
+        "stab": 2,
+        "pop": 2,
+        "intl": 2
+      },
+      "alertMsg": "Provincial delegates treat the push as proof that Otonomi Daerah was not passed merely to be shelved in Jakarta ministries."
+    },
+    {
+      "id": "daerah_aceh_papua",
+      "text": "Offer asymmetric special autonomy packages targeted at Aceh and Irian Jaya",
+      "cost": 24,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 2,
+      "description": "Propose a distinct, broader autonomy arrangement—greater resource retention and local cultural and religious authority—aimed specifically at Aceh and Irian Jaya.",
+      "effects": {
+        "utusan_daerah": 14,
+        "ref": 6,
+        "intl": 6,
+        "stab": -4,
+        "pdip": -5,
+        "abri": -3,
+        "pop": 2
+      },
+      "alertMsg": "Delegates from the outer provinces respond with cautious interest, while unitary nationalists in Jakarta grumble about asymmetric concessions."
+    },
+    {
+      "id": "daerah_final_appeal",
+      "text": "Make a final round of personal calls to the 27 provincial governors ahead of the vote",
+      "cost": 0,
+      "repeatable": false,
+      "maxTurn": 22,
+      "minTurn": 20,
+      "description": "With 135 delegates scattered across 27 provincial delegations, the Utusan Daerah bloc is the third-largest force in the chamber. Spend the night personally calling the governors and regional chairmen to cash in every decentralization pledge and favor you have banked.",
+      "effects": {
+        "utusan_daerah": 18,
+        "pop": 2,
+        "ref": 1,
+        "stab": 2
+      },
+      "alertMsg": "The calls go long into the night across three time zones, and enough provincial governors give firm commitments that the regional delegations swing noticeably toward your side by morning."
+    }
+  ]
+}

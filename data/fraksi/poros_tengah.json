@@ -1,0 +1,288 @@
+{
+  "name": "Fraksi Reformasi<br>(Amien Rais)",
+  "short": "A. Rais",
+  "seats": 34,
+  "affinity": 20,
+  "image": "photo/rais.png",
+  "coverImage": "photo/faction/pan.png",
+  "summary": "Amien Rais is currently an influential reformist figure and chairman of the National Mandate Party, <font color=\"#0055A4\"><b>PAN</b></font>, and following the party's underwhelming performance in the June elections he controls no significant voting power on his own, at least not yet, not directly through his own party's modest seat count. What he does control, in abundance, is moral authority. His reputation as a central, outspoken leader of the 1998 Reformasi movement gives him an outsized voice in the national conversation that dwarfs what his party's modest 7 percent showing would otherwise suggest, and everyone in Senayan knows it. He is currently operating as something close to a lone political sniper, watching the giants of <font color=\"#CC9900\"><b>Golkar</b></font> and <font color=\"#C0392B\"><b>PDI-P</b></font> collide from a comfortable distance while maneuvering carefully behind the scenes.",
+  "biography": "Amien Rais, born in Surakarta on April 26, 1944, earned a doctorate in political science from the University of Chicago before returning home to become one of the sharpest and most consistent critics of Suharto's rule, a reputation he built patiently over many years of academic and public life. A former chairman of the massive Muhammadiyah organization, one of the country's two largest Islamic mass movements, he was instrumental in the 1998 student uprisings that ultimately forced Suharto from office, lending the protests a credibility and organizational reach that student groups alone could not have supplied. While he holds immense public respect across a wide swath of the population, his formal political machine, <font color=\"#0055A4\"><b>PAN</b></font>, failed to capture the masses in the 1999 election in the way he had privately hoped it would. Refusing to be sidelined by that disappointment, he is actively roaming the political wilderness, using television cameras, quiet backroom meetings, and his own considerable personal network to create a new path to power that does not depend on a seat count alone.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Supportive",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Intrigued",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Observing",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Skeptical",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Critical",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Condemnatory",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Fierce Opponent",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "rais_islamic_law",
+      "text": "Signal openness to provincial implementation of Islamic legal frameworks",
+      "cost": 28,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "Quietly indicate to Rais and the modernist Islamic caucus that this administration would not stand in the way of regional religious legal autonomy, at least at the provincial level, without committing to constitutional amendments in writing. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "poros_tengah": 20,
+        "poros_tengah_favor": 1,
+        "ppp": 6,
+        "pdip": -12,
+        "ref": 2,
+        "stab": 2,
+        "pop": -1
+      },
+      "alertMsg": "Rais nods slowly, treating the signal as a major opening. The Islamic bloc is genuinely thrilled by what they read as a real concession, while Megawati's secular nationalists denounce the overture."
+    },
+    {
+      "id": "rais_diplomatic",
+      "text": "Offer a round of postings abroad and on state boards to PAN cadres",
+      "cost": 15,
+      "repeatable": true,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "PAN's leadership includes a number of capable, underemployed academics and former activists who supported the party's founding in August 1998. Extend a batch of ambassadorships and advisory board seats to names Rais himself would approve of.",
+      "effects": {
+        "poros_tengah": 10,
+        "ref": -1,
+        "pop": 1,
+        "golkar_akbar": -1
+      },
+      "alertMsg": "The offer is accepted without much public comment. Rais tempers his public criticism of your administration noticeably, at least for the week."
+    },
+    {
+      "id": "rais_freeport",
+      "text": "Grant oversight of foreign mining concession reviews",
+      "cost": 20,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "Rais resigned from ICMI's Council of Experts back in 1997 specifically over pressure to soften his public criticism of the Busang mining scandal and of Freeport's operations in Papua. Offer him a formal mandate in reviewing how the country's foreign mining concessions are structured going forward. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "poros_tengah": 15,
+        "poros_tengah_favor": 1,
+        "econ": -5,
+        "intl": -5,
+        "pop": 4,
+        "utusan_daerah": 3,
+        "ref": 3
+      },
+      "alertMsg": "Rais accepts with genuine, unperformed satisfaction, treating it as belated vindication for a fight he lost two years ago. Foreign mining interests quietly reach out through diplomatic channels in alarm."
+    },
+    {
+      "id": "rais_muhammadiyah",
+      "text": "Channel state support toward Muhammadiyah's schools and clinics",
+      "cost": 15,
+      "repeatable": true,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "Although Rais stepped back from Muhammadiyah's day-to-day leadership in 1998 to found PAN, the organization remains close to him personally and institutionally. Channel financial and administrative support toward its schools and clinics.",
+      "effects": {
+        "poros_tengah": 10,
+        "pop": 5,
+        "ref": 2,
+        "ppp": 2,
+        "stab": 2
+      },
+      "alertMsg": "The gesture is received warmly within Muhammadiyah's own networks, and word of it travels quietly through channels considerably faster than any formal press release."
+    },
+    {
+      "id": "rais_reformasi_credit",
+      "text": "Publicly credit Rais's leadership in the May 1998 Reformasi movement",
+      "cost": 10,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "Rais lent the student occupation of the DPR building real organizational weight and moral cover in the final days before Suharto stepped down, a contribution he feels has never been adequately acknowledged from the Palace. Say so, plainly and on the record.",
+      "effects": {
+        "poros_tengah": 8,
+        "pop": 4,
+        "ref": 3,
+        "intl": 1
+      },
+      "alertMsg": "The acknowledgment costs little and Rais receives it with visible, if carefully understated, pleasure. Student groups who marched alongside him in May 1998 treat the statement as an overdue piece of historical honesty."
+    }
+  ],
+  "transformed": {
+    "name": "Poros Tengah<br>(Amien Rais & Abdurrahman Wahid)",
+    "coverImage": "photo/faction/porostengah.png",
+    "seats": 163,
+    "summary": "The <font color=\"#0055A4\"><b>Poros Tengah</b></font> is a fluid, highly strategic coalition of Islamic parties orchestrated by the brilliant and famously unpredictable Amien Rais, stitched together out of <font color=\"#0055A4\"><b>PAN</b></font>, <font color=\"#008000\"><b>PPP</b></font>, <font color=\"#006400\"><b>PKB</b></font>, and the smaller Islamic factions that individually managed only single digit vote shares in June but together now control enough MPR seats to decide the presidency outright, a fact that has transformed the entire arithmetic of this session almost overnight. None of its member parties particularly like each other, and Rais himself has openly floated at least three different names for the top job depending on the week, but the coalition holds together for one simple, durable reason: neither Megawati's secular nationalists nor your own administration can reach a majority without either winning the Axis over wholesale or splitting it apart faction by faction.",
+    "biography": "Amien Rais, born in Surakarta on April 26, 1944, earned a doctorate in political science from the University of Chicago before returning home to teach at Gadjah Mada University and build, over many patient years, a reputation as one of the country's sharpest critics of authoritarian rule. He joined the leadership of ICMI, the Muslim intellectuals association you founded, and chaired its Council of Experts, but resigned in 1997 after Suharto pressured him to soften his public criticism of the Busang mining scandal and of Freeport's operations in Papua. Unwilling to hand power unconditionally to either Megawati's secularists or the old New Order machine, he has stitched together the <font color=\"#0055A4\"><b>Poros Tengah</b></font> from PAN, PPP, PKB, and the minor Islamic parties, positioning himself and Abdurrahman Wahid as the indispensable kingmakers of the 1999 General Session.",
+    "moods": [
+      {
+        "min": 80,
+        "text": "Cautiously Backing Habibie",
+        "color": "#006400",
+        "overlay": "rgba(0, 255, 0, 0.15)"
+      },
+      {
+        "min": 60,
+        "text": "Open to Backing Habibie",
+        "color": "#009000",
+        "overlay": "rgba(0, 191, 255, 0.10)"
+      },
+      {
+        "min": 50,
+        "text": "Weighing options",
+        "color": "#4682B4",
+        "overlay": "rgba(0, 0, 255, 0.10)"
+      },
+      {
+        "min": 40,
+        "text": "Skeptical",
+        "color": "#2F4F4F",
+        "overlay": "rgba(255, 140, 0, 0.10)"
+      },
+      {
+        "min": 30,
+        "text": "Suspicious",
+        "color": "#FF4500",
+        "overlay": "rgba(255, 69, 0, 0.15)"
+      },
+      {
+        "min": 20,
+        "text": "United against you",
+        "color": "#FF0000",
+        "overlay": "rgba(255, 0, 0, 0.15)"
+      },
+      {
+        "min": 0,
+        "text": "Hell-bent on overthrowing you",
+        "color": "#8B0000",
+        "overlay": "rgba(139, 0, 0, 0.25)"
+      }
+    ],
+    "interactions": [
+      {
+        "id": "axis_cabinet",
+        "text": "Offer the Vice Presidency and senior economic portfolios to the Central Axis",
+        "cost": 35,
+        "repeatable": false,
+        "maxTurn": 21,
+        "minTurn": 18,
+        "description": "Since the Axis coalesced, its members have made little secret of what would satisfy them: the Vice Presidency and senior economic ministries. Offer the package outright in exchange for the Axis instructing its 163 delegates to accept your accountability speech. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+        "effects": {
+          "poros_tengah": 25,
+          "poros_tengah_favor": 1,
+          "pdip": -15,
+          "stab": -3
+        },
+        "alertMsg": "The Axis is deeply moved by the offer, its transactional and traditionalist wings leaning strongly toward accepting your terms. PDI-P realizes it is being outmaneuvered in the coalition arithmetic."
+      },
+      {
+        "id": "axis_education",
+        "text": "Double the Ministry of Religious Affairs subsidy allocation for the pesantren network",
+        "cost": 22,
+        "repeatable": false,
+        "maxTurn": 21,
+        "minTurn": 18,
+        "description": "State subsidies for religious education, channeled through the pesantren boarding school network and Muhammadiyah schools, can be expanded dramatically by executive directive ahead of the vote. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+        "effects": {
+          "poros_tengah": 16,
+          "poros_tengah_favor": 1,
+          "econ": -5,
+          "pop": 3
+        },
+        "alertMsg": "The clerics within the Axis are exceptionally pleased, several remarking privately that no government has funded the religious school network this generously in living memory."
+      },
+      {
+        "id": "axis_speaker_deference",
+        "text": "Defer to Speaker Amien Rais's procedural authority over the General Session floor",
+        "cost": 20,
+        "repeatable": false,
+        "maxTurn": 21,
+        "minTurn": 18,
+        "description": "Rais holds the MPR Speakership, a position carrying enormous procedural leverage over how debates are scheduled and how votes are called. Signal through your floor whips a willingness to let his office set the procedural rules of the session.",
+        "effects": {
+          "poros_tengah": 15,
+          "ref": 3,
+          "stab": 2
+        },
+        "alertMsg": "The deference is noted approvingly by Rais, easing procedural friction between the Palace and the Speaker's podium ahead of the accountability vote."
+      },
+      {
+        "id": "axis_hajj_quota",
+        "text": "Rework this year's Hajj pilgrimage quota allocations in favor of Axis constituent networks",
+        "cost": 18,
+        "repeatable": true,
+        "maxTurn": 21,
+        "minTurn": 18,
+        "description": "The Ministry of Religious Affairs administers the country's annual Hajj pilgrimage quota, a prized instrument of patronage. Rework this year's allocation formula to favor provincial religious offices aligned with the Central Axis.",
+        "effects": {
+          "poros_tengah": 12,
+          "pop": 2
+        },
+        "alertMsg": "Word travels through mosque networks and provincial religious offices far faster than any press release could, and the coalition's transactional members treat it as a tangible gesture of partnership."
+      },
+      {
+        "id": "axis_ppp_courtship",
+        "text": "Elevate Hamzah Haz as a primary coalition negotiator with the Palace",
+        "cost": 15,
+        "repeatable": false,
+        "maxTurn": 21,
+        "minTurn": 18,
+        "description": "Grant PPP's Hamzah Haz a high-profile role in drafting the session's economic and religious commission guidelines alongside Palace representatives.",
+        "effects": {
+          "poros_tengah": 12,
+          "ref": 2,
+          "stab": 2
+        },
+        "alertMsg": "Haz accepts the recognition with his usual careful reserve, and PPP's 58 delegates inside the Central Axis warm noticeably toward your accountability report."
+      },
+      {
+        "id": "axis_final_deal",
+        "text": "Strike a final midnight bargain with Amien Rais and Gus Dur before the vote",
+        "cost": 0,
+        "repeatable": false,
+        "maxTurn": 22,
+        "minTurn": 20,
+        "description": "With 163 delegates under its umbrella, the Central Axis is the single largest kingmaker on the floor. Meet directly with Amien Rais, Gus Dur, and Hamzah Haz to cash in every accumulated favor from PAN, PKB, and PPP before the ballot box opens.",
+        "effects": {
+          "poros_tengah": 20,
+          "pdip": -6,
+          "other_parties": 4,
+          "stab": 2
+        },
+        "alertMsg": "After hours of intense backroom bargaining at the Mulia Hotel, the leaders of the Central Axis emerge with a quiet nod. Every favor you banked with PAN, PKB, and PPP has now been called to the table."
+      }
+    ]
+  }
+}

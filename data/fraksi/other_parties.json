@@ -1,0 +1,155 @@
+{
+  "name": "F-KKI, F-PDU & Minor Blocs",
+  "short": "Others",
+  "seats": 46,
+  "affinity": 35,
+  "image": "photo/other.png",
+  "coverImage": "photo/faction/other.png",
+  "summary": "This bloc represents the myriad of smaller political parties that secured seats in the 1999 elections, including the Crescent Star Party, the Justice Party, and various minor nationalist and religious factions. Lacking a single cohesive ideology, they range from fervent modernist Islamic reformers to secular technocrats. Because they do not command massive voting blocs individually, they are highly susceptible to horse trading and backroom lobbying. The sudden explosion of these smaller parties is a direct consequence of the collapse of the New Order's strict three party system, a structural shift examined deeply in David Bourchier and Vedi R. Hadiz's political compilations. They are looking for whatever coalition can guarantee them a voice, or cabinet positions, in the new government.",
+  "biography": "Following the collapse of the New Order's strict three party system, Indonesia's political landscape fractured into 48 competing parties in the 1999 elections. While giants like <font color=\"#C0392B\"><b>PDI-P</b></font> and <font color=\"#CC9900\"><b>Golkar</b></font> dominated the headlines, millions of votes were dispersed among these smaller vehicles. Some are vehicles for ambitious individuals, while others represent very specific regional or religious demographics, echoing the pre-1965 political diversity before the state imposed its corporatist consolidation. Their sheer fragmentation means they cannot govern alone, but in a tightly contested MPR General Session, their combined delegates could easily become the kingmaking margin. Engaging them requires a delicate mix of ideological validation for the principled factions and straightforward patronage for the more transactional ones.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Secured",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Favorable",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Fragmented",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Weighing Offers",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Skeptical",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Defecting",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Hostile",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "others_bribe",
+      "text": "Distribute discretionary patronage to minor party chairmen",
+      "cost": 15,
+      "repeatable": true,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Distribute straightforward campaign and organizational patronage to the heads of the smallest splinter parties that have no fixed ideological loyalties.",
+      "effects": {
+        "other_parties": 14,
+        "ref": -4,
+        "cendana": 3,
+        "pop": -1,
+        "stab": 1
+      },
+      "alertMsg": "The minor party chairmen eagerly accept the support and pledge their handful of delegates to your survival."
+    },
+    {
+      "id": "others_pbb_counsel",
+      "text": "Offer a legal drafting role to Crescent Star Party (PBB) Chairman Yusril Ihza Mahendra",
+      "cost": 16,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The chairman of the Crescent Star Party (PBB) is a sharp constitutional scholar who previously wrote speeches at the State Secretariat for both Suharto and yourself. Offer him a formal role drafting legislation your administration wants passed. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "other_parties": 14,
+        "other_parties_favor": 1,
+        "poros_tengah": 5,
+        "ref": 3,
+        "pop": 1,
+        "golkar_akbar": 2
+      },
+      "alertMsg": "The offer is accepted with evident enthusiasm, and the resulting draft legislation moves through committee with a fluency that surprises several longtime DPR staffers."
+    },
+    {
+      "id": "others_pk_outreach",
+      "text": "Court the disciplined campus dakwah cadres of the Justice Party (PK)",
+      "cost": 10,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "Built out of university campus dakwah networks and led by Nur Mahmudi Ismail, the Justice Party (PK) is known for an internal discipline that makes its 7 delegates resistant to crude bribery. Extend an official greeting to their inaugural congress and commit to clean governance.",
+      "effects": {
+        "other_parties": 11,
+        "ref": 7,
+        "poros_tengah": 4,
+        "pop": 2
+      },
+      "alertMsg": "The gesture draws a measured, deliberative response from Nur Mahmudi Ismail's cadres, who value principled recognition far more than patronage envelopes."
+    },
+    {
+      "id": "others_pdkb_courtship",
+      "text": "Extend assurances of religious minority protections to the Christian-based minor parties",
+      "cost": 10,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "A handful of the smaller parties in this bloc, Manasse Malo's PDKB and FKKI among them, draw their base from the country's Protestant and Catholic minorities and carry a particular anxiety about sectarian debates elsewhere in the Assembly. Offer them a direct, public assurance of constitutional protection.",
+      "effects": {
+        "other_parties": 10,
+        "utusan_golongan": 5,
+        "pop": 2,
+        "ref": 2,
+        "intl": 2
+      },
+      "alertMsg": "The Christian-based minor parties receive the assurance gratefully, and their delegates begin looking upon your administration with noticeably less suspicion."
+    },
+    {
+      "id": "others_committee_seats",
+      "text": "Distribute vice-chair seats on DPR commissions among the smallest factions",
+      "cost": 15,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 12,
+      "description": "The smallest parties in this bloc rarely see commission leadership positions of any kind. Break with parliamentary custom and hand a round of commission vice-chairmanships to the minor parties instead. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "other_parties": 14,
+        "other_parties_favor": 1,
+        "ref": 3,
+        "pop": 1,
+        "stab": 2
+      },
+      "alertMsg": "The minor party chairmen treat the appointments as a genuine elevation in status, and several make a point of publicly thanking your administration by name."
+    },
+    {
+      "id": "others_final_appeal",
+      "text": "Make a last round of calls to the minor party chairmen before the ballot",
+      "cost": 0,
+      "repeatable": false,
+      "maxTurn": 22,
+      "minTurn": 20,
+      "description": "With dozens of delegates scattered across minor parties, their combined votes could easily swing a close session. Spend the night working the phones personally, calling in every favor and assurance extended to the minor party chairmen.",
+      "effects": {
+        "other_parties": 18,
+        "stab": 2
+      },
+      "alertMsg": "Most of the chairmen you reach are glad simply to have been called directly by the President, and pledge their small handful of delegates with visible satisfaction at the personal attention."
+    }
+  ]
+}

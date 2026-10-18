@@ -1,0 +1,157 @@
+{
+  "name": "Fraksi Karya Pembangunan<br>(Irama Tersedak - Habibie)",
+  "short": "Loyalists",
+  "seats": 40,
+  "affinity": 80,
+  "image": "photo/loyal.png",
+  "coverImage": "photo/faction/loyal.png",
+  "summary": "This indispensable faction forms your absolute inner circle, a smaller bloc than <font color=\"#CC9900\"><b>Golkar</b></font>'s main body but unmatched in devotion, comprised of senior bureaucrats, progressive ICMI intellectuals, and longtime stalwarts who rose alongside you through the Ministry of Research and Technology and the state aerospace company IPTN over two full decades of building something concrete before any of them ever seriously thought about winning an election. They believe deeply, almost personally, in your vision of a technologically advanced, well educated, and genuinely democratic Indonesia, because in many cases they helped design that very vision alongside you long before Reformasi made it politically fashionable to talk about democracy at all. The emergence of ICMI and this technocratic elite represented a critical juncture in the late New Order period, offering an alternative to the rigid military and organicist structures that had previously dominated state thinking. Unlike Akbar's machine politicians, this group has, quite simply, nowhere else to go. Their careers, their access to influence, and in some cases their physical safety from accusations of New Order collusion are all staked entirely on your presidency surviving the MPR session intact and legitimate. That dependency makes them the one bloc in the Assembly whose support you do not need to purchase through concessions or policy shifts of any kind, but it also means their affection carries relatively little independent weight in the broader coalition math, since a faction this small cannot, on its own, save you if the larger blocs decide to turn away.",
+  "biography": "These are the men and women who share your dream of an industrialized, modern Indonesia, and who have shared it for a very long time. Many are engineers and technocrats who worked alongside you at the Agency for the Assessment and Application of Technology or at IPTN, the state aircraft manufacturer you built almost from nothing, while others are fellow intellectuals from the Association of Indonesian Muslim Intellectuals, ICMI, which you founded and chaired starting in 1990 with Suharto's blessing as a counterweight to secular nationalist influence within the military establishment. They saw your sudden ascension to the presidency on May 21, 1998, mere hours after Suharto's resignation, as the long delayed triumph of civilian, technocratic leadership over a military dominated old guard that had held the country's institutions in a firm grip for a generation. The creation of ICMI and the empowerment of these intellectuals signaled a profound shift in Indonesian politics, marking a period where marginalized Islamic voices were brought back into the state fold, as extensively chronicled in the scholarly works of David Bourchier and Vedi R. Hadiz. Their political capital is now entirely, and irreversibly, bound up in your administration. If you fall to the secular nationalists or to conservative elements within the armed forces, the influence they have spent an entire decade carefully building will very likely be extinguished along with your presidency, a prospect that keeps this small circle unusually cohesive under pressure.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Ride or Die",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Faithful",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Nervous",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Worried",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Losing Confidence",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Panicking",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Jumping ship",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "loyalist_rally",
+      "text": "Call a gathering at the residence for a conversation that will not be written down anywhere",
+      "cost": 10,
+      "repeatable": true,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The Kuningan residence has hosted this circle before, in the early years at IPTN when the whole enterprise was closer to a shared conviction than an institution, and again in the anxious days after May 1998 when nobody was entirely sure the presidency would hold together at all. Bring the same people back for an evening of exactly that kind, no agenda, no minutes, just a reminder of what everyone in the room originally signed up for.",
+      "effects": {
+        "golkar_habibie": 10,
+        "poros_tengah": 2,
+        "pop": 2,
+        "ref": 2
+      },
+      "alertMsg": "Your words remind them of why they followed you from IPTN to the Palace in the first place, and several longtime aides admit afterward that the evening steadied something they had not realized was slipping. They leave the residence newly energized, at least for now."
+    },
+    {
+      "id": "loyalist_bppt",
+      "text": "Shield a longstanding personal project from this year's budget cuts",
+      "cost": 18,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The IMF's austerity conditions have quietly targeted the aerospace and technology programs you spent two decades building, IPTN and the broader research establishment among them, as exactly the kind of state spending a country in crisis can no longer justify. Find a way to keep the funding flowing anyway, through whatever line item or exemption your finance ministry can construct. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "golkar_habibie": 14,
+        "golkar_habibie_favor": 1,
+        "econ": -6,
+        "intl": -6,
+        "ref": -2,
+        "golkar_akbar": 2
+      },
+      "alertMsg": "The funding survives intact, and your oldest allies within the research establishment treat the news with visible, private relief. Foreign creditors reviewing the budget line by line are less impressed, noting that a country requesting emergency assistance is still somehow finding money for aircraft prototypes."
+    },
+    {
+      "id": "loyalist_icmi",
+      "text": "Call together an old network for a quiet word of reassurance",
+      "cost": 10,
+      "repeatable": true,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The intellectual and religious network you built over a decade through the Association of Indonesian Muslim Intellectuals has not gone anywhere, even if its members now find themselves scattered across ministries and universities rather than gathered in one room. Bring a portion of them together, informally, for a conversation that will not be minuted.",
+      "effects": {
+        "golkar_habibie": 8,
+        "poros_tengah": 3,
+        "ppp": 2,
+        "pop": 2,
+        "ref": 2
+      },
+      "alertMsg": "The gathering is small and unpublicized, but word of it travels quietly through circles that still remember what ICMI once meant. A few of those present, it turns out, now sit closer to Amien Rais than to you, and the goodwill spills, modestly, in both directions."
+    },
+    {
+      "id": "loyalist_technocrat_defense",
+      "text": "Publicly defend the technocratic cabinet ministers most exposed to austerity criticism",
+      "cost": 10,
+      "repeatable": true,
+      "maxTurn": 21,
+      "minTurn": 6,
+      "description": "Several of your own economic ministers, career technocrats rather than party men, are taking heavy fire in the press over the IMF program's social costs. Stand behind them personally and visibly, rather than letting them absorb the criticism alone while you stay above the fray.",
+      "effects": {
+        "golkar_habibie": 10,
+        "econ": 4,
+        "ref": 3,
+        "intl": 3,
+        "pop": 1
+      },
+      "alertMsg": "Your ministers, several of whom had quietly begun drafting resignation letters, treat the public backing as a genuine vote of confidence. Commentators note that it is a small thing to say aloud, but it is not nothing."
+    },
+    {
+      "id": "loyalist_n250",
+      "text": "Champion a renewed budget line for the N-250 Gatotkaca aircraft program",
+      "cost": 18,
+      "repeatable": false,
+      "maxTurn": 21,
+      "minTurn": 0,
+      "description": "The turboprop you personally guided into its first test flight in August 1995 at IPTN remains, for this circle, the single clearest proof that Indonesia could build something the developed world respected. Push for a renewed development budget for the program despite the state of the treasury. <font color=\"#0000FF\"><b>Grants 1 favor.</b></font>",
+      "effects": {
+        "golkar_habibie": 14,
+        "golkar_habibie_favor": 1,
+        "econ": -6,
+        "intl": -4,
+        "pop": 3,
+        "golkar_akbar": 2
+      },
+      "alertMsg": "The engineers who built the Gatotkaca treat the news as a personal vindication rather than a mere budget line, and morale inside the research establishment visibly lifts. The finance ministry's own auditors quietly flag the decision as fiscally reckless given the current program with the Fund."
+    },
+    {
+      "id": "loyalist_final_stand",
+      "text": "Gather your inner circle for one final night before the Assembly decides your fate",
+      "cost": 0,
+      "repeatable": false,
+      "maxTurn": 22,
+      "minTurn": 20,
+      "description": "Whatever happens next, the people who built your presidency with you over two decades deserve to hear it from you directly rather than read it in the morning papers. Call the old IPTN and ICMI circle back to the residence one last time, not to strategize, but simply to stand together before the vote.",
+      "effects": {
+        "golkar_habibie": 20,
+        "pop": 2,
+        "ref": 2
+      },
+      "alertMsg": "There is little left to say that has not already been said, and everyone in the room seems to know it, but your oldest allies leave the residence steadier than they arrived, and visibly resolved to see the vote through with you regardless of the outcome."
+    }
+  ]
+}

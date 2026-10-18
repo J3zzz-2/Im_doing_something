@@ -1,0 +1,145 @@
+{
+  "name": "Fraksi PPP<br>(Hamzah Haz)",
+  "short": "H. Haz",
+  "seats": 58,
+  "affinity": 30,
+  "image": "photo/haz.png",
+  "coverImage": "photo/faction/ppp.png",
+  "summary": "The United Development Party, guided by the famously careful and self effacing Hamzah Haz, is the oldest Islamic political entity in the republic, the product of a forced 1973 merger of four Muslim parties carried out under Suharto's fusion policy, and it enters this session as the third largest bloc in the DPR at roughly 11 percent of the national vote, a base built patiently over decades of grassroots organizing through pesantren networks and provincial ulama relationships that no newer party can easily replicate on short notice. The creation of the <font color=\"#008000\"><b>PPP</b></font> was a hallmark of the New Order's attempts to control and domesticate political Islam, forcing disparate groups into a single manageable entity, a dynamic well documented in the academic compilations by David Bourchier and Vedi R. Hadiz. Despite that traditionalist pedigree stretching back a quarter century, Haz himself is a man who has spent thirty years surviving inside a political system that was never built to reward Islamic parties with real power, and he approaches the coming presidential vote with exactly that same practiced caution rather than any bold ideological gambit. The <font color=\"#008000\"><b>PPP</b></font> is inherently wary of rapid secularization and deeply uncomfortable, in a way that is widely known even if rarely stated bluntly in public, with the idea of a female head of state, which puts real and lasting distance between the party and Megawati regardless of how large her seat count grows. But having served in your own cabinet as Minister of Investment until only months ago, Haz's faction also knows your administration intimately, including its scandals, its debts to <font color=\"#CC9900\"><b>Golkar</b></font>'s old guard, and its vulnerabilities heading into the MPR session, and that intimacy cuts both ways depending on how events unfold in the weeks ahead. Proving that your government represents a genuine ethical break from the New Order, rather than a mere continuation of it wearing a technocrat's face, matters more to this bloc than any single policy concession you could offer them across the table.",
+  "biography": "Hamzah Haz, born in Ketapang, West Kalimantan, on February 15, 1940, worked first as a schoolteacher and then as a provincial journalist before entering West Kalimantan's regional legislature in 1968, a fairly typical apprenticeship for a regional politician of his generation. He moved to the national DPR in 1971, first representing Nahdlatul Ulama's political wing and then the United Development Party after the New Order forced Indonesia's various Islamic parties into a single fusion party in 1973, a merger imposed from above that he nonetheless learned to navigate skillfully over the following decades. As political scholars like Bourchier and Hadiz have noted, surviving within this forced fusion required an immense degree of pragmatism, balancing state demands with grassroots religious expectations. You brought him into your own cabinet as Minister of Investment in May 1998, and he served there for a full year even as he was elected chairman of the <font color=\"#008000\"><b>PPP</b></font> in December 1998, only stepping down from your government in May 1999 to focus fully on leading the party through the coming election. That shared history cuts both ways in the current moment. Haz understands your administration from the inside, having sat inside your own cabinet room for a year, but he is also acutely aware of how quickly proximity to your government can turn from an asset into a liability, and he has positioned the <font color=\"#008000\"><b>PPP</b></font> close enough to the Central Axis to hedge deliberately against being dragged down by any scandal that might yet attach itself to your name. His leadership style is emblematic of the older generation of Islamic politicians who learned to operate under intense state scrutiny and who now find themselves wielding genuine electoral power in a newly democratized landscape.",
+  "moods": [
+    {
+      "min": 80,
+      "text": "Aligned",
+      "color": "#006400",
+      "overlay": "rgba(0, 255, 0, 0.15)"
+    },
+    {
+      "min": 60,
+      "text": "Favorable",
+      "color": "#009000",
+      "overlay": "rgba(0, 191, 255, 0.10)"
+    },
+    {
+      "min": 50,
+      "text": "Neutral",
+      "color": "#4682B4",
+      "overlay": "rgba(0, 0, 255, 0.10)"
+    },
+    {
+      "min": 40,
+      "text": "Cautious",
+      "color": "#2F4F4F",
+      "overlay": "rgba(255, 140, 0, 0.10)"
+    },
+    {
+      "min": 30,
+      "text": "Distanced",
+      "color": "#FF4500",
+      "overlay": "rgba(255, 69, 0, 0.15)"
+    },
+    {
+      "min": 20,
+      "text": "Opposed",
+      "color": "#FF0000",
+      "overlay": "rgba(255, 0, 0, 0.15)"
+    },
+    {
+      "min": 0,
+      "text": "Irreconcilable",
+      "color": "#8B0000",
+      "overlay": "rgba(139, 0, 0, 0.25)"
+    }
+  ],
+  "interactions": [
+    {
+      "id": "ppp_subsidies",
+      "text": "Shield religious schooling subsidies from IMF austerity cuts",
+      "cost": 18,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 4,
+      "description": "Among the budget lines the IMF's structural adjustment conditions have quietly targeted for reduction is state support for religious schooling, which funds the pesantren networks PPP's base relies on. Assure Haz directly that this budget line is off the table. <font color=\"#0000FF\"><b>Grants 1 favor (carries over into Poros Tengah).</b></font>",
+      "effects": {
+        "ppp": 15,
+        "ppp_favor": 1,
+        "poros_tengah": 4,
+        "econ": -4,
+        "pop": 3,
+        "ref": 1
+      },
+      "alertMsg": "Haz appreciates the financial guarantee more than he lets on publicly. The PPP's stance toward your administration warms noticeably."
+    },
+    {
+      "id": "ppp_hamzah_role",
+      "text": "Offer Hamzah Haz an elevated Economic Coordinating portfolio in the next cabinet",
+      "cost": 20,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "Haz spent a full year in your cabinet as Minister of Investment before stepping down in May to lead PPP through the election. Offer him an elevated Coordinating Ministry role in your next term. <font color=\"#0000FF\"><b>Grants 1 favor (carries over into Poros Tengah).</b></font>",
+      "effects": {
+        "ppp": 16,
+        "ppp_favor": 1,
+        "poros_tengah": 4,
+        "golkar_akbar": -2,
+        "pop": 2,
+        "stab": 2
+      },
+      "alertMsg": "Haz receives the offer with practiced caution, and his public tone toward your administration softens noticeably in the days that follow."
+    },
+    {
+      "id": "ppp_gender_debate",
+      "text": "Quietly amplify the clerical debate over female executive leadership",
+      "cost": 15,
+      "repeatable": true,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "An argument is already circulating among conservative scholars over whether Islamic tradition permits a woman to serve as President, with obvious relevance to Megawati's candidacy. Quietly give existing voices in that conversation a larger platform.",
+      "effects": {
+        "ppp": 12,
+        "poros_tengah": 4,
+        "pdip": -10,
+        "ref": -4,
+        "stab": -2,
+        "utusan_golongan": -2
+      },
+      "alertMsg": "The debate gains noticeably more airtime in religious publications and Friday sermons, cementing distance between PPP and Megawati's camp while drawing sharp condemnation from PDI-P."
+    },
+    {
+      "id": "ppp_pesantren_visit",
+      "text": "Make a well-publicized visit to a major East Java pesantren aligned with PPP",
+      "cost": 10,
+      "repeatable": true,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "A high-profile, respectfully arranged visit to one of the boarding schools that anchor PPP's grassroots network costs little and signals personal regard.",
+      "effects": {
+        "ppp": 9,
+        "pkb": 4,
+        "pop": 3,
+        "ref": 1,
+        "stab": 2
+      },
+      "alertMsg": "The visit is covered warmly in the religious press, and the school's leadership speaks well of you afterward in circles that matter to PPP's base."
+    },
+    {
+      "id": "ppp_fusion_history",
+      "text": "Publicly acknowledge the 1973 forced party fusion as an authoritarian injustice",
+      "cost": 14,
+      "repeatable": false,
+      "maxTurn": 17,
+      "minTurn": 0,
+      "description": "The United Development Party was created in 1973 when Suharto's government compelled four separate Islamic parties to merge into a single, state-supervised entity. Acknowledge plainly on the record that the forced fusion was an act of state coercion.",
+      "effects": {
+        "ppp": 12,
+        "poros_tengah": 3,
+        "ref": 6,
+        "golkar_akbar": -3,
+        "pop": 2,
+        "stab": 1
+      },
+      "alertMsg": "The acknowledgment lands with real weight among PPP's older generation, several of whom lived through the original 1973 fusion."
+    }
+  ]
+}
