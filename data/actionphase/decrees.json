@@ -1064,13 +1064,14 @@
     "alertMsg": "In a short ceremony at Merdeka Palace, Akbar Tandjung and your inner circle sign a single page: one Golkar, one chain of command, one list of delegates. The engineers and ICMI veterans who followed you from IPTN file out of their separate caucus room and take their seats under the Slipi banner, and the provincial chairmen who had been quietly hedging between the two camps announce the reconciliation before the evening news. For the first time since the July 1998 congress, Golkar speaks with a single voice, and that voice says it will stand behind the President when the ballot boxes open. Reformers outside the party note, with some unease, whose machine has just been strengthened.",
     "locks": {
       "minFactions": {
-        "golkar_akbar": 100
+        "golkar_akbar": 50
       },
       "statPenalties": {
         "ref": -4,
         "cendana": 4
       },
       "factionPenalties": {
+        "golkar_akbar": 25,
         "pdip": -8,
         "utusan_golongan": -5
       }

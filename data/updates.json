@@ -1,10 +1,22 @@
 [
   {
+  "version": "0.1.1 Hotfix",
+  "date": "October 19, 2026",
+  "title": "Beta 0.1.1 Hotfix",
+  "notes": [
+    "<b>Amien Rais and Gus Dur will no longer blindly hand you the presidency:</b> Coalition favors are now taxed on merge, and final appeal favor-dumping has heavy diminishing returns.",
+    "<b>Infinite PC button patched:</b> Slashed base Political Capital payouts across routine actions so you can't just print 300+ PC like an ATM.",
+    "<b>PDI-P will literally burn the capital down and then crucify you:</b> Freezing out Megawati into deep hostility now triggers massive red-shirt demonstrations, bleeding National Stability and spooking regional delegates.<ul><li>Added a 'Street Mobilization' indicator to PDI-P's screen so you can see how close the Satgas is to rioting before things explode.</li></ul>",
+    "<b>Cendana actually does something instead of sleeping:</b> Nuking Suharto's family influence too fast in a single turn now causes liquidity runs and street-level sabotage.",
+    "Reunifying Golkar under Slipi sets a reasonable floor instead of permanently making him 100% loyal."
+  ]
+  },
+  {
     "version": "0.1",
     "date": "October 19, 2026",
     "title": "Beta Release \"Pidato Pertanggungjawaban\"",
     "notes": [
       "Expect some bugs and missing features, but the game is playable and the core mechanics are in place.<br><font color='#ff0000'>This is a beta release, so please report any bugs you find!<br>Notes: <ul><li>Missing images</li><li>Some untested features</li><li>Broken display</li></ul></font><br><br><font color='#000080'>"
     ]
-  } 
+  }
 ]

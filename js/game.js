@@ -347,6 +347,9 @@ window.wirantoLocked = true;
 window.wirantoStrain = 0;
 window.mobileSelectedParliamentFaction = null;
 window.lastElectionSummary = null;
+// Hotfix 1
+// Cendana is now active
+window.lastTurnCendana = 95;
 
 
 
@@ -2446,8 +2449,12 @@ function loadPhase() {
         factions['poros_tengah'].moods = t.moods;
         factions['poros_tengah'].interactions = t.interactions;
 
-        const inheritedFavor = (factions['ppp'] ? (factions['ppp'].favor || 0) : 0) + (factions['pkb'] ? (factions['pkb'].favor || 0) : 0);
-        factions['poros_tengah'].favor = (factions['poros_tengah'].favor || 0) + inheritedFavor;
+        // Hotfix 1 Central Axis Nerf
+        const pppFavors = (factions['ppp'] && !bannedFactions['ppp']) ? (factions['ppp'].favor || 0) : 0;
+        const pkbFavors = (factions['pkb'] && !bannedFactions['pkb']) ? (factions['pkb'].favor || 0) : 0;
+        const rawFavors = pppFavors + pkbFavors;
+        const inheritedFavor = Math.min(2, Math.floor(rawFavors * 0.5));
+        factions['poros_tengah'].favor = Math.min(3, (factions['poros_tengah'].favor || 0) + inheritedFavor);
 
         if (factions['ppp']) factions['ppp'].seats = 0;
         const pppIndex = portraitFactions.indexOf('ppp');
@@ -2556,6 +2563,17 @@ function applyEndOfTurnEconomy() {
         }
     }
 
+    // Hotfix 1: PDI-P street rage if ignored
+    if (factions['pdip'] && !bannedFactions['pdip'] && factions['pdip'].affinity < 25) {
+        stats.stab = clampDashboard('stab', stats.stab - 3);
+        if (factions['utusan_daerah'] && !bannedFactions['utusan_daerah']) {
+            factions['utusan_daerah'].affinity = clampFaction('utusan_daerah', factions['utusan_daerah'].affinity - 1.5);
+        }
+        if (factions['other_parties'] && !bannedFactions['other_parties']) {
+            factions['other_parties'].affinity = clampFaction('other_parties', factions['other_parties'].affinity - 1.5);
+        }
+    }
+
     if (passivePC !== 0) {
         const nextPC = clampPC(stats.PC + passivePC);
         logPCChange(nextPC - stats.PC, 'end-of-turn passive ledger');
@@ -2626,6 +2644,17 @@ function applyEndOfTurnEconomy() {
     if (factions['abri']) {
         stats.mil = Math.round(factions['abri'].affinity);
     }
+
+    // Hotfix 1: Cendana counter-strike check
+    const cendanaDrop = (window.lastTurnCendana || stats.cendana) - stats.cendana;
+    if (cendanaDrop >= 12) {
+        stats.econ = clampDashboard('econ', stats.econ - 4);
+        stats.stab = clampDashboard('stab', stats.stab - 4);
+        if (factions['golkar_akbar']) {
+            factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 5);
+        }
+    }
+    window.lastTurnCendana = stats.cendana;
 
     return { pcPenalty: pcPenalty, passivePC: passivePC };
 }
@@ -3160,6 +3189,22 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
 
     html += '<p><font face="MS Sans Serif" size="2"><b>Delegates Controlled:</b> ' + f.seats + '<br>';
     html += '<b>Current Faction Stance:</b> <font color="' + mood.color + '"><b>' + mood.text + '</b></font><br>';
+    
+    // Specific street temperature indicator for PDI-P, added in Hotfix 1
+    if (factionKey === 'pdip') {
+        let streetHTML = '';
+        if (f.affinity < 25) {
+            streetHTML = '<font color="#8B0000"><b>Active Riots</b></font> <span style="font-size: 11px; color: #8B0000;"><i>(Red shirts are paralyzing the boulevards)</i></span>';
+        } else if (f.affinity < 40) {
+            streetHTML = '<font color="#FF4500"><b>Simmering Unrest</b></font> <span style="font-size: 11px; color: #555;"><i>(Satgas units massing at Senayan)</i></span>';
+        } else if (f.affinity < 60) {
+            streetHTML = '<font color="#B8860B"><b>Guarded Watchfulness</b></font> <span style="font-size: 11px; color: #555;"><i>(Grassroots crowds holding posts, waiting on signals from Kebagusan)</i></span>';
+        } else {
+            streetHTML = '<font color="#006400"><b>Standing Down</b></font> <span style="font-size: 11px; color: #555;"></span>';
+        }
+        html += '<b>Street Mobilization:</b> ' + streetHTML + '<br>';
+    }
+
     html += '<b>Bargaining Leverage:</b> <font color="' + leverage.color + '"><b>' + leverage.text + '</b></font> <i>(' + leverage.desc + ')</i><br>';
     html += '<b>Political Goodwill Owed:</b> <font color="#0000FF">' + favorDesc + '</font></p>';
 
@@ -3324,9 +3369,11 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
         applyEffects(effectsToApply);
     }
 
+    // Hotfix 1
+    // 1 favor = +14, 2 favors = +20, 3 favors = +24, maxes out at +28
     let favorBonus = 0;
     if (isFinalAction && f.favor > 0) {
-        favorBonus = f.favor * 15;
+        favorBonus = Math.min(28, Math.round(Math.sqrt(f.favor) * 14));
         f.favor = 0;
         f.affinity = clampFaction(factionKey, f.affinity + favorBonus);
     }

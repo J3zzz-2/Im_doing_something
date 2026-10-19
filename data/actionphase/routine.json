@@ -82,8 +82,8 @@
       }
     ],
     "dynamicPC": {
-      "base": 28,
-      "min": 12
+      "base": 14,
+      "min": 6
     }
   },
   {
@@ -465,8 +465,8 @@
       }
     ],
     "dynamicPC": {
-      "base": 32,
-      "min": 14
+      "base": 15,
+      "min": 7
     }
   },
   {
@@ -1174,8 +1174,8 @@
       }
     ],
     "dynamicPC": {
-      "base": 26,
-      "min": 10
+      "base": 12,
+      "min": 5
     }
   },
   {
@@ -1375,8 +1375,8 @@
       }
     ],
     "dynamicPC": {
-      "base": 25,
-      "min": 10
+      "base": 13,
+      "min": 7
     }
   },
   {

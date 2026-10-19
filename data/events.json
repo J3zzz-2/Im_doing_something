@@ -1578,44 +1578,44 @@
       {
         "text": "\"Lead with the undeniable record of Reformasi and macroeconomic rescue: remind the Assembly that in 512 days we brought the rupiah back from Rp 16,800, broke inflation from 77%, freed political prisoners, enacted Laws No. 22 & 25 on Regional Autonomy, liberated the press, and delivered the freest election since 1955.\"",
         "effects": {
-          "PC": 35,
-          "ref": 15,
-          "econ": 12,
-          "stab": 20,
-          "pop": 8,
-          "golkar_habibie": 15,
-          "golkar_akbar": 8,
-          "utusan_daerah": 8,
-          "utusan_golongan": 6
+          "PC": 20,
+          "ref": 8,
+          "econ": 8,
+          "stab": 10,
+          "pop": 5,
+          "golkar_habibie": 10,
+          "golkar_akbar": 5,
+          "utusan_daerah": 5,
+          "utusan_golongan": 5
         },
         "reaction": "KOMPAS: 'TIGA JAM DI PODIUM MPR: ANGKA STATISTIK HABIBIE DIHADANG HUJATAN TIMTIM DAN BANK BALI'<br><br>Standing for nearly three hours beneath the glare of the television lights as PDI-P delegates repeatedly interrupted him with cries of *'Huuuu!'*, President Habibie marshaled a barrage of macroeconomic charts and legislative statistics, reminding the 700 delegates that his 512-day administration passed 39 laws, cut inflation from 77 percent to single digits, and brought the dollar down from Rp 16,800. Yet when the eleven MPR factions rose one by one to deliver their formal *Pemandangan Umum* replies, even Golkar's own spokesman slammed the speech for glossing over East Timor, Bank Bali, and the SP3 for Suharto, warning that statistics alone will not save him on October 19."
       },
       {
         "text": "\"Confront East Timor and Bank Bali with candor and humility: apologize to the nation for the shortcomings of your transitional cabinet, explain that East Timor was never recognized by the UN and had become a bleeding wound, and pledge full prosecution of anyone implicated in Bank Bali.\"",
         "effects": {
-          "PC": 30,
-          "ref": 18,
-          "intl": 15,
-          "pop": 12,
-          "stab": 15,
-          "pdip": 8,
-          "poros_tengah": 8,
-          "utusan_golongan": 10,
-          "golkar_habibie": 12
+          "PC": 8,
+          "ref": 8,
+          "intl": 10,
+          "pop": 7,
+          "stab": 8,
+          "pdip": 5,
+          "poros_tengah": 5,
+          "utusan_golongan": 5,
+          "golkar_habibie": 10
         },
         "reaction": "MAJALAH TEMPO: 'PERMINTAAN MAAF DI TENGAH MALAM: KETULUSAN NEGARAWAN ATAU TAKTIK MEREDAM PALU SIDANG?'<br><br>In a dramatic departure from three decades of presidential infallibility, B.J. Habibie bowed his head from the MPR rostrum during his *Jawaban Presiden* reply to apologize directly to the Indonesian people for the shortcomings of his seventeen-month transition, while defending the East Timor referendum as the only way to free Indonesia from a twenty-four-year international pariah trap. The humility noticeably quieted the jeering benches of PKB and the functional groups, though nationalist hardliners in PDI-P and ABRI immediately attacked the apology as an admission of guilt that warrants rejecting his mandate."
       },
       {
         "text": "\"Deliver a fiery appeal to the Golkar family, the outer islands, and the Islamic caucus: warn the Assembly that rejecting your speech is a backdoor coup designed to erase everything ICMI, the regions, and reformist Muslims have built since May 1998.\"",
         "effects": {
-          "PC": 40,
-          "golkar_akbar": 12,
-          "golkar_habibie": 18,
-          "poros_tengah": 10,
+          "PC": 15,
+          "golkar_akbar": 10,
+          "golkar_habibie": 15,
+          "poros_tengah": 3,
           "utusan_daerah": 10,
-          "other_parties": 8,
-          "stab": 15,
-          "pdip": -8
+          "other_parties": 5,
+          "stab": 7,
+          "pdip": -10
         },
         "reaction": "SUARA PEMBARUAN: 'PIDATO PERTANGGUNGJAWABAN RASA KAMPANYE: HABIBIE GALANG SENTIMEN KEDAERAHAN DAN ISLAM'<br><br>Dropping all pretense of a neutral constitutional accounting, President Habibie turned his three-hour address before the MPR into a combative campaign rally aimed squarely at outer-island delegates, Golkar stalwarts, and the Islamic parties of the Central Axis. While his loyalists from Sulawesi and the PBB benches cheered every line, secular nationalists and independent commentators accused the President of polarizing the chamber along regional and religious fault lines in a desperate bid to scrape together 351 votes."
       },
