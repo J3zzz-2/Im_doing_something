@@ -50,8 +50,7 @@
   {
     "id": "win_overwhelming",
     "title": "A New Mandate",
-    "desc": "Win the MPR General Session with an overwhelming landslide (450+ votes)."
-  ,
+    "desc": "Win the MPR General Session with an overwhelming landslide (450+ votes).",
     "icon": "photo/achv_win_overwhelming.png"
   },
   {
@@ -145,12 +144,6 @@
     "icon": "photo/achievements/camera.png"
   },
   {
-    "id": "bhinneka_coalition",
-    "title": "Gotong Royong Grandmaster",
-    "desc": "Enter the MPR General Session with favorable stances across PDI-P, the Central Axis, Golkar (Akbar), and ABRI simultaneously.",
-    "icon": "photo/achievements/megabibie.png"
-  },
-  {
     "id": "enak_jamanku",
     "title": "\"Piye Kabare? Enak Jamanku Toh?\"",
     "desc": "Win the MPR General Session with Cendana Influence nearly Untouchable and Reformasi Credibility reduced to 'Authoritarian' or 'New Order Crony'.",
@@ -203,5 +196,17 @@
     "title": "Pancasila Forever!",
     "desc": "Re-impose the 1985 Asas Tunggal law under emergency rule and dissolve the religious party blocs in the MPR.",
     "icon": "photo/achievements/coalition.png"
+  },
+  {
+    "id": "unify_golkar",
+    "title": "Unify Golkar",
+    "desc": "Reconcile the two wings of Golkar.",
+    "icon": "photo/achievements/coalition.png"
+  },
+  {
+    "id": "rainbow_coalition",
+    "title": "The Rainbow Coalition",
+    "desc": "Proclaim a government of national unity with PDI-P, Golkar, Central Axis, and ABRI.",
+    "icon": "photo/achievements/megabibie.png"
   }
 ]

@@ -1,9 +1,9 @@
-// ==========================================
-// FACTION LEVERAGE MAPPINGS & HELPERS
-// ==========================================
+// game.js: core game logic: state, stats and factions, asset loading, menus, events, action phase and turn flow.
+
+// National metrics that give each faction its leverage over the president
 const FACTION_LEVERAGE_METRICS = {
     'pdip': ['pop', 'ref'],
-    'golkar_akbar': ['econ', 'stab', 'cendana'], // Akbar respects a stable economy and New Order continuity
+    'golkar_akbar': ['econ', 'stab', 'cendana'],
     'golkar_habibie': ['ref', 'econ', 'intl'],
     'poros_tengah': ['ref', 'pop'],
     'ppp': ['stab', 'pop'],
@@ -14,17 +14,57 @@ const FACTION_LEVERAGE_METRICS = {
     'other_parties': ['pop', 'stab']
 };
 
+// NIGHT OF THE LONG KNIVES: HORSE-TRADING COSTS (tweak these)
+const HORSE_TRADE_SINGLE_COST = 1;
+const HORSE_TRADE_BLOC_COST = 3;
+const HORSE_TRADE_BLOC_OVERTURES = 5;
+
+// PC cost of one overture, or of a whole bloc of overtures
+function getHorseTradeCost(overtures) {
+    return overtures >= HORSE_TRADE_BLOC_OVERTURES ? HORSE_TRADE_BLOC_COST : overtures * HORSE_TRADE_SINGLE_COST;
+}
+
+// Horse-trading gain per overture = BASE x nationalMult x stanceMult x fatigue x jitter
+const HORSE_TRADE_BASE_GAIN = 0.20;
+const HORSE_TRADE_NATIONAL_MIN = 0.50;
+const HORSE_TRADE_NATIONAL_RANGE = 1.00;
+const HORSE_TRADE_MOOD_PEAK = 0.45;
+const HORSE_TRADE_MOOD_FLOOR = 0.35;
+
+// Horse-trading multiplier from Government Stability (average of all national metrics, with Cendana inverted)
+function getHorseTradeNationalMult() {
+    return HORSE_TRADE_NATIONAL_MIN + (getGovStability() / 100) * HORSE_TRADE_NATIONAL_RANGE;
+}
+
+// Horse-trading receptiveness from the faction's own mood tier: middle tiers are most persuadable, the extremes least
+function getHorseTradeReceptiveness(factionKey, affinity) {
+    const f = factions[factionKey];
+    const mood = getMoodData(factionKey, affinity);
+    let pos = 0.5;
+    if (f && Array.isArray(f.moods) && f.moods.length > 1) {
+        const idx = Math.max(0, f.moods.indexOf(mood));
+        pos = idx / (f.moods.length - 1);
+    }
+    const maxDist = Math.max(HORSE_TRADE_MOOD_PEAK, 1 - HORSE_TRADE_MOOD_PEAK);
+    const d = (pos - HORSE_TRADE_MOOD_PEAK) / maxDist;
+    const mult = HORSE_TRADE_MOOD_FLOOR + (1 - HORSE_TRADE_MOOD_FLOOR) * (1 - d * d);
+    return { mult, text: mood.text, color: mood.color };
+}
+
+// Factions shown in the portrait strip at the start of a campaign
 const INITIAL_PORTRAIT_FACTIONS = [
     'pdip', 'golkar_akbar', 'golkar_habibie', 'poros_tengah', 'abri',
     'ppp', 'pkb', 'utusan_daerah',
     'utusan_golongan', 'other_parties'
 ];
 
+// Escape ampersands and double quotes for use in HTML attributes
 function escapeAttr(str) {
     if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
+// Deep copy an object (structuredClone with a JSON fallback)
 function deepClone(obj) {
     if (typeof structuredClone === 'function') {
         try { return structuredClone(obj); } catch (e) { console.warn(e); }
@@ -32,6 +72,7 @@ function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
+// Compute a faction's leverage over the president from its metrics
 function getFactionLeverage(factionKey) {
     const metrics = FACTION_LEVERAGE_METRICS[factionKey];
     if (!metrics) {
@@ -101,6 +142,7 @@ function getFactionLeverage(factionKey) {
     };
 }
 
+// Display names of the stats used in effect text
 const EFFECT_DISPLAY_NAMES = {
     'PC': 'Political Capital',
     'pop': 'Popularity',
@@ -122,6 +164,7 @@ const EFFECT_DISPLAY_NAMES = {
     'other_parties': 'Minor Parties Loyalty'
 };
 
+// Turn a numeric change into a word (Slightly to Greatly)
 function getQualitativeMagnitude(absVal) {
     if (absVal <= 3) return "Slightly";
     if (absVal <= 8) return "Moderately";
@@ -129,6 +172,7 @@ function getQualitativeMagnitude(absVal) {
     return "Greatly";
 }
 
+// Look up the descriptive tier name for a stat value
 function getPlainStatTierName(statKey, val) {
     const statTiers = dashboardStats[statKey];
     if (!statTiers || statTiers.length === 0) return "a stable level";
@@ -138,9 +182,9 @@ function getPlainStatTierName(statKey, val) {
     return statTiers[statTiers.length - 1].text;
 }
 
-// Qualitative Palace Whip Projection for the MPR Dashboard (No Raw Numbers)
-function getVagueWhipProjection() {
-    if (!gameStarted) return `<font color="#555555">Assembly Not Yet Convened</font>`;
+// Estimated vote margin over the majority mark (the real vote's model without variance); null before the Assembly convenes
+function getWhipMargin() {
+    if (!gameStarted) return null;
 
     const govStability = getGovStability();
     const cendanaSabotage = Math.round((stats.cendana - 50) / 10);
@@ -169,24 +213,41 @@ function getVagueWhipProjection() {
     }
 
     const majorityMark = Math.floor(activeTotalSeats / 2) + 1;
-    const margin = estVotes - majorityMark;
-
-    if (margin >= 65) return `<font color="#006400"><b>We might have a commanding lead</b></font>`;
-    if (margin >= 15) return `<font color="#009000"><b>We are leading</b></font>`;
-    if (margin >= -20) return `<font color="#B8860B"><b>This is too close to call</b></font>`;
-    if (margin >= -85) return `<font color="#FF4500"><b>Our influence is waning</b></font>`;
-    return `<font color="#8B0000"><b>We are very unpopular among the delegates</b></font>`;
+    return estVotes - majorityMark;
 }
 
-// --- GAME STATE & CONFIGURATION ---
+// Qualitative Palace Whip Projection for the MPR Dashboard (No Raw Numbers)
+function getVagueWhipProjection() {
+    const margin = getWhipMargin();
+    if (margin === null) return `<font color=\"#555555\">Assembly Not Yet Convened</font>`;
+
+    if (margin >= 65) return `<font color=\"#006400\"><b>We might have a commanding lead</b></font>`;
+    if (margin >= 15) return `<font color=\"#009000\"><b>We are leading</b></font>`;
+    if (margin >= -20) return `<font color=\"#B8860B\"><b>This is too close to call</b></font>`;
+    if (margin >= -85) return `<font color=\"#FF4500\"><b>Our influence is waning</b></font>`;
+    return `<font color=\"#8B0000\"><b>We are very unpopular among the delegates</b></font>`;
+}
+
+// Small arrow showing which way the whip projection moved since the last refresh
+function getWhipTrendHTML() {
+    const m = getWhipMargin();
+    let html = '';
+    if (m !== null && typeof window.lastWhipMargin === 'number') {
+        const d = m - window.lastWhipMargin;
+        if (d >= 0.5) html = ' <span title="Support has improved since your last move" style="color:#006400;">&#9650;</span>';
+        else if (d <= -0.5) html = ' <span title="Support has slipped since your last move" style="color:#8B0000;">&#9660;</span>';
+    }
+    window.lastWhipMargin = m;
+    return html;
+}
+
+// GAME STATE & CONFIGURATION
 let currentTurn = 1;
 let MAX_TURNS = 20;
 let isActionPhase = false;
 let gameStarted = false;
 let globalMalus = 0;
 let libraryData = [];
-let currentLibraryCategory = 'All';
-let currentLibrarySearch = '';
 let tutorialPages = [];
 let historyPages = [];
 let creditsData = {};
@@ -194,11 +255,64 @@ let gameConfig = {};
 let selectedDifficulty = 'historical';
 let showOptionEffects = false;
 let musicEnabled = true;
-let currentTheme = 'default';
+// Appearance = three independent settings: window style, color scheme, CRT scanlines
+const WINDOW_STYLES = {
+    default: { label: 'Default Win95', css: null },
+    win98:   { label: 'Windows 98',    css: 'css/windows98/styles.css' },
+    macos8:  { label: 'Mac OS 8',      css: 'css/macos8/styles.css' }
+};
+// Available color schemes with their swatches and groups
+const COLOR_SCHEMES = {
+    standard: { label: 'Standard', swatch: '#000080', group: 'light' },
+    cherry: { label: 'Cherry Blossom', swatch: '#F29BB8', group: 'light' },
+    exusiai: { label: 'Exusiai', swatch: '#A3171F', group: 'light' },
+    mint: { label: 'Mint Soda', swatch: '#6CC3A0', group: 'light' },
+    sky: { label: 'Sky Blue', swatch: '#6FB1E6', group: 'light' },
+    peach: { label: 'Peach Sorbet', swatch: '#F2A36B', group: 'light' },
+    brick: { label: 'Brick', swatch: '#7A1F1F', group: 'light' },
+    desert: { label: 'Desert', swatch: '#5E5A2B', group: 'light' },
+    lilac: { label: 'Lilac', swatch: '#4B3A7A', group: 'light' },
+    marine: { label: 'Marine', swatch: '#003B5C', group: 'light' },
+    rose: { label: 'Rose', swatch: '#7A2646', group: 'light' },
+    slate: { label: 'Slate', swatch: '#2F3E5C', group: 'light' },
+    spruce: { label: 'Spruce', swatch: '#1F4D2B', group: 'light' },
+    wheat: { label: 'Wheat', swatch: '#6B4A12', group: 'light' },
+    dark: { label: 'Dark', swatch: '#2B2B2B', group: 'dark' },
+    midnight: { label: 'Midnight', swatch: '#0B1E5B', group: 'dark' },
+    obsidian: { label: 'Obsidian (black)', swatch: '#3A3A52', group: 'dark' },
+    nord: { label: 'Nord', swatch: '#5E81AC', group: 'dark' },
+    amethyst: { label: 'Amethyst', swatch: '#8A5FD6', group: 'dark' },
+    forest: { label: 'Forest', swatch: '#3E9A66', group: 'dark' },
+    darkcherry: { label: 'Dark Cherry', swatch: '#C0507A', group: 'dark' },
+    exusiainight: { label: 'Exusiai Night', swatch: '#D17A2A', group: 'dark' },
+    amber: { label: 'Amber Terminal', swatch: '#B87800', group: 'dark' },
+    greenterm: { label: 'Green Phosphor', swatch: '#1F9940', group: 'dark' },
+    contrast: { label: 'High Contrast', swatch: '#FFFF00', group: 'dark' }
+};
+// Current appearance selections
+let windowStyle = 'default';
+let colorScheme = 'standard';
+let crtEnabled = false;
 let crtIntensity = 30;
+
+// Effects: independent switches (Settings > Effects). 'crt' is crtEnabled; the rest live in effectsOn.
+const EFFECTS = [
+    { id: 'crt',        label: 'CRT Scanlines',
+      desc: 'Fine horizontal scanlines across the whole screen.' },
+    { id: 'glow',       label: 'Phosphor Glow &amp; Bloom',
+      desc: 'Text gets a soft glowing halo and the screen a faint bloom of light.' },
+    { id: 'flicker',    label: 'Screen Flicker &amp; Static',
+      desc: 'A faint brightness flicker, moving static noise and a slow rolling bar. Flickering can bother people who are sensitive to flashing light.' },
+    { id: 'curve',      label: 'Curved Glass Vignette (Curvature)',
+      desc: 'Darkened edges, rounded glass corners and a hint of glare, like a curved tube.' },
+    { id: 'aberration', label: 'RGB Chromatic Aberration (Glitch Effect)',
+      desc: 'Text splits into red and cyan fringes, with a brief glitch shake every few seconds.' }
+];
+// Current on/off state of each effect
+let effectsOn = { glow: false, flicker: false, curve: false, aberration: false };
 let textScale = 110;
-let currentLang = 'en'; // 'en' | 'id'
-let updatesData = null; // latest update notice shown on the title screen (updates.json)
+let currentLang = 'en';
+let updatesData = null;
 
 // Turn & Action Economy Tracking
 let actionCooldowns = {};
@@ -231,256 +345,17 @@ window.tallySpeed = 1;
 window.activeTallyInterval = null;
 window.wirantoLocked = true;
 window.wirantoStrain = 0;
-window.mobileLeftPanelCollapsed = false;
 window.mobileSelectedParliamentFaction = null;
 window.lastElectionSummary = null;
 
-// Achievement Tracking Flags
-let lowestGovStability = 100;
-let bankBaliCleanSteps = {};
-let timorPromiseSteps = {};
-let sp3UpheldWithHighCendana = false;
-let helpedRaisSpeaker = false;
 
-function clearTallyInterval() {
-    if (window.activeTallyInterval) {
-        clearInterval(window.activeTallyInterval);
-        window.activeTallyInterval = null;
-    }
-}
 
-// ==========================================================================
-// AUTOMATIC MID-RUN CAMPAIGN SAVE & RESUME SYSTEM (localStorage)
-// ==========================================================================
-const CAMPAIGN_SAVE_KEY = 'habibie_active_campaign_v1';
-
-window.saveCampaignState = function() {
-    if (!gameStarted || currentTurn >= MAX_TURNS) return;
-    try {
-        const curEv = events[currentTurn - 1];
-        const payload = {
-            timestamp: Date.now(),
-            currentTurn,
-            isActionPhase,
-            globalMalus,
-            selectedDifficulty,
-            showOptionEffects,
-            actionCooldowns,
-            actionUsageCount,
-            turnExecutiveUsed,
-            turnFactionUsed,
-            activeDecrees,
-            bannedFactions,
-            completedInteractions,
-            minStats,
-            maxCendana,
-            minFactions,
-            stats,
-            factions,
-            portraitFactions,
-            wirantoLocked: window.wirantoLocked,
-            wirantoStrain: window.wirantoStrain,
-            lowestGovStability,
-            bankBaliCleanSteps,
-            timorPromiseSteps,
-            sp3UpheldWithHighCendana,
-            helpedRaisSpeaker,
-            pcLog: window.pcLog || [],
-            lang: currentLang,
-            curEventShuffledIndices: curEv ? curEv.shuffledIndices : null
-        };
-        localStorage.setItem(CAMPAIGN_SAVE_KEY, JSON.stringify(payload));
-    } catch (e) { console.warn('Could not save campaign:', e); }
-};
-
-window.hasSavedCampaign = function() {
-    try {
-        const raw = localStorage.getItem(CAMPAIGN_SAVE_KEY);
-        if (!raw) return null;
-        const data = JSON.parse(raw);
-        if (data && data.currentTurn && data.currentTurn < MAX_TURNS && data.stats && data.factions) {
-            return data;
-        }
-    } catch (e) { console.warn(e); }
-    return null;
-};
-
-window.clearCampaignSave = function() {
-    try {
-        localStorage.removeItem(CAMPAIGN_SAVE_KEY);
-    } catch (e) { console.warn(e); }
-};
-
-window.continueSavedCampaign = async function() {
-    const data = hasSavedCampaign();
-    if (!data) {
-        showStartMenu();
-        return;
-    }
-
-    clearTallyInterval();
-
-    // The save holds text in the language it was played in; reload matching assets first
-    if ((data.lang === 'en' || data.lang === 'id') && data.lang !== currentLang) {
-        currentLang = data.lang;
-        saveUserSettings();
-        await loadLocalizedAssets();
-    }
-
-    currentTurn = data.currentTurn || 1;
-    isActionPhase = Boolean(data.isActionPhase);
-    globalMalus = Number(data.globalMalus) || 0;
-    selectedDifficulty = data.selectedDifficulty || selectedDifficulty;
-    if (typeof data.showOptionEffects === 'boolean') showOptionEffects = data.showOptionEffects;
-
-    actionCooldowns = data.actionCooldowns || {};
-    actionUsageCount = data.actionUsageCount || {};
-    turnExecutiveUsed = Boolean(data.turnExecutiveUsed);
-    turnFactionUsed = Boolean(data.turnFactionUsed);
-    activeDecrees = data.activeDecrees || {};
-    bannedFactions = data.bannedFactions || {};
-    completedInteractions = data.completedInteractions || {};
-    minStats = data.minStats || { pop: 0, mil: 0, ref: 0, econ: 0, intl: 0, stab: 0 };
-    maxCendana = data.maxCendana !== undefined ? data.maxCendana : 100;
-    minFactions = data.minFactions || {};
-    stats = Object.assign({ PC: 20, pop: 30, mil: 35, ref: 40, econ: 20, intl: 30, stab: 25, cendana: 75 }, data.stats);
-    factions = data.factions;
-    portraitFactions = Array.isArray(data.portraitFactions) ? data.portraitFactions : [...INITIAL_PORTRAIT_FACTIONS];
-
-    window.wirantoLocked = data.wirantoLocked !== undefined ? Boolean(data.wirantoLocked) : true;
-    window.wirantoStrain = Number(data.wirantoStrain) || 0;
-
-    lowestGovStability = data.lowestGovStability !== undefined ? data.lowestGovStability : 100;
-    bankBaliCleanSteps = data.bankBaliCleanSteps || {};
-    timorPromiseSteps = data.timorPromiseSteps || {};
-    sp3UpheldWithHighCendana = Boolean(data.sp3UpheldWithHighCendana);
-    helpedRaisSpeaker = Boolean(data.helpedRaisSpeaker);
-    window.pcLog = Array.isArray(data.pcLog) ? data.pcLog : [];
-    window.resolvedEventTurn = 0;
-    window.electionPanelSnapshot = null;
-
-    if (data.curEventShuffledIndices && events[currentTurn - 1]) {
-        events[currentTurn - 1].shuffledIndices = data.curEventShuffledIndices;
-    }
-
-    prevStatsSnapshot = null;
-    lastRenderedPortraitSignature = "";
-    gameStarted = true;
-    syncSidebarVisibility();
-    updateUI();
-
-    if (isActionPhase) {
-        showActionMenu();
-    } else {
-        renderEventMenu();
-    }
-};
-
-// ==========================================================================
-// MOBILE COLLAPSIBLE LEFT PANEL & TOUCH TOOLTIP HELPERS
-// ==========================================================================
-function setupMobileLeftPanelToggle() {
-    const leftPanel = document.getElementById('left-panel');
-    if (!leftPanel || document.getElementById('mobile-left-toggle')) return;
-
-    const btn = document.createElement('button');
-    btn.id = 'mobile-left-toggle';
-    btn.className = 'mobile-panel-toggle-btn';
-    btn.onclick = function() {
-        window.mobileLeftPanelCollapsed = !window.mobileLeftPanelCollapsed;
-        updateMobileToggleLabel();
-    };
-    leftPanel.insertBefore(btn, leftPanel.firstChild);
-    updateMobileToggleLabel();
-}
-
-function updateMobileToggleLabel() {
-    const leftPanel = document.getElementById('left-panel');
-    const btn = document.getElementById('mobile-left-toggle');
-    if (!leftPanel || !btn) return;
-
-    if (window.mobileLeftPanelCollapsed) {
-        leftPanel.classList.add('mobile-collapsed');
-        const govText = gameStarted ? getGovStabilityWord() : '-';
-        btn.innerHTML = `[+] Expand Presidential Status (PC: ${stats.PC} &bull; Gov: ${govText})`;
-    } else {
-        leftPanel.classList.remove('mobile-collapsed');
-        btn.innerHTML = `[&ndash;] Minimize Presidential Status Panel`;
-    }
-}
-
-const MOBILE_STATUS_METRICS = [
-    ['pop', 'Popularity'],
-    ['mil', 'Military Support'],
-    ['ref', 'Reformasi Credibility'],
-    ['econ', 'Economic Health'],
-    ['intl', 'International Standing'],
-    ['stab', 'National Stability'],
-    ['cendana', 'Cendana Influence']
-];
-
+// GOVERNMENT STABILITY WORDING (desktop panel + mobile status bar)
 const GOV_WORD_COLORS = {
     SECURE: '#006400', STABLE: '#009000', PRECARIOUS: '#B8860B', UNSTABLE: '#FF4500', COLLAPSING: '#8B0000'
 };
 
-// Sticky top bar shown on small screens during a campaign (hidden by CSS on desktop)
-function updateMobileStatusBar() {
-    const bar = document.getElementById('mobile-status-bar');
-    if (!bar) return;
-
-    const leftPanel = document.getElementById('left-panel');
-    const visible = gameStarted && !(leftPanel && leftPanel.style.display === 'none');
-    bar.classList.toggle('active', visible);
-    if (!visible) {
-        setMobileStatusSheetOpen(false);
-        return;
-    }
-
-    document.getElementById('msb-pc').innerText = stats.PC;
-    const govWord = getGovStabilityWord();
-    const govEl = document.getElementById('msb-gov');
-    govEl.innerText = govWord;
-    govEl.style.color = GOV_WORD_COLORS[govWord] || '#000000';
-    document.getElementById('msb-turn').innerText = `${Math.min(currentTurn, events.length)}/${events.length}`;
-
-    if (bar.classList.contains('open')) renderMobileStatusSheet();
-}
-
-function renderMobileStatusSheet() {
-    const sheet = document.getElementById('msb-sheet');
-    if (!sheet) return;
-    let html = '';
-    MOBILE_STATUS_METRICS.forEach(([key, label]) => {
-        const valEl = document.getElementById('val-' + key);
-        html += `<div class="msb-row"><span>${label}</span><span>${valEl ? valEl.innerHTML : ''}</span></div>`;
-    });
-    sheet.innerHTML = html;
-}
-
-function setMobileStatusSheetOpen(open) {
-    const bar = document.getElementById('mobile-status-bar');
-    if (!bar) return;
-    bar.classList.toggle('open', open);
-    const toggle = document.getElementById('msb-toggle');
-    if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    const caret = document.getElementById('msb-caret');
-    if (caret) caret.innerHTML = open ? '&#9650;' : '&#9660;';
-    if (open) renderMobileStatusSheet();
-}
-
-window.toggleMobileStatusSheet = function() {
-    const bar = document.getElementById('mobile-status-bar');
-    if (bar) setMobileStatusSheetOpen(!bar.classList.contains('open'));
-};
-
-// Tapping anywhere outside the bar closes the metrics sheet
-document.addEventListener('click', function(e) {
-    const bar = document.getElementById('mobile-status-bar');
-    if (bar && bar.classList.contains('open') && !bar.contains(e.target)) {
-        setMobileStatusSheetOpen(false);
-    }
-});
-
+// Word describing the current Government Stability
 function getGovStabilityWord() {
     const g = getGovStability();
     if (g >= 80) return "SECURE";
@@ -490,34 +365,11 @@ function getGovStabilityWord() {
     return "COLLAPSING";
 }
 
-window.showMobileTooltipNote = function(text) {
-    const box = document.getElementById('mobile-status-tooltip-box');
-    if (!box || !text) return;
-    box.innerHTML = `<b>&#9432; Note:</b> ${text}`;
-    box.classList.add('active');
-};
 
-function scrollMainPanelToTop() {
-    if (window.innerWidth <= 820) {
-        const mainPanel = document.getElementById('main-panel');
-        if (mainPanel) {
-            const bar = document.getElementById('mobile-status-bar');
-            const barHeight = (bar && bar.classList.contains('active')) ? bar.offsetHeight : 0;
-            const y = mainPanel.getBoundingClientRect().top + window.scrollY - 8 - barHeight;
-            window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
-            return;
-        }
-    }
-    window.scrollTo({ top: 0, behavior: 'instant' });
-}
-
-// --------------------------------------------------------------------------
 // MENU NAVIGATION: one place decides where "Back" goes
-// --------------------------------------------------------------------------
 window.electionPanelSnapshot = null;
 
-// Call at the top of every full-panel menu (Settings, Library, Achievements, Credits).
-// Returns false when the menu must not open (vote tally still running).
+// Call at the top of every full-panel menu; returns false when the menu must not open (vote tally running)
 window.enterMenuView = function() {
     if (window.activeTallyInterval) {
         showCustomAlert('The roll call is still in progress. Let it finish, or press SKIP ANIMATION first.', null);
@@ -531,6 +383,7 @@ window.enterMenuView = function() {
     return true;
 };
 
+// Go back to the view the current menu was opened from
 window.returnToPreviousView = function() {
     if (!gameStarted) { showStartMenu(); return; }
     if (currentTurn > events.length) {
@@ -546,77 +399,8 @@ window.returnToPreviousView = function() {
     if (isActionPhase) showActionMenu(); else renderEventMenu();
 };
 
-// --------------------------------------------------------------------------
-// SETTINGS PERSISTENCE (single key; includes the extended settings from settings.js)
-// --------------------------------------------------------------------------
-function saveUserSettings() {
-    try {
-        const audioElem = document.getElementById('bg-music');
-        const payload = {
-            selectedDifficulty,
-            showOptionEffects,
-            musicEnabled,
-            volume: audioElem ? audioElem.volume : 0.3,
-            volumeSet: Boolean(window.volumeUserSet),
-            currentTheme,
-            crtIntensity,
-            textScale,
-            currentLang,
-            extra: getPersistableExtraSettings()
-        };
-        localStorage.setItem('habibie_settings', JSON.stringify(payload));
-    } catch (e) { console.warn('Could not save settings:', e); }
-}
 
-function getPersistableExtraSettings() {
-    const extra = Object.assign({}, window.extraSettings || {});
-    // Never persist "custom" wallpaper when the image itself could not be stored
-    if (extra.desktopBg === 'custom') {
-        let hasImage = false;
-        try { hasImage = Boolean(localStorage.getItem('habibie_custom_bg')); } catch (e) { console.warn(e); }
-        if (!hasImage) extra.desktopBg = 'teal';
-    }
-    return extra;
-}
-
-function loadUserSettings() {
-    try {
-        const raw = localStorage.getItem('habibie_settings');
-        if (!raw) {
-            currentLang = 'en';
-            return;
-        }
-        const s = JSON.parse(raw);
-        if (s.selectedDifficulty) selectedDifficulty = s.selectedDifficulty;
-        if (typeof s.showOptionEffects === 'boolean') showOptionEffects = s.showOptionEffects;
-        if (typeof s.musicEnabled === 'boolean') musicEnabled = s.musicEnabled;
-        if (s.currentTheme === 'default' || s.currentTheme === 'crt') currentTheme = s.currentTheme;
-        if (s.extra && typeof s.extra === 'object' && window.extraSettings) {
-            window.extraSettings = Object.assign({}, window.extraSettings, s.extra);
-        }
-        if (s.crtIntensity !== undefined) crtIntensity = Number(s.crtIntensity);
-        if (s.textScale !== undefined) textScale = Number(s.textScale);
-        currentLang = 'en'; // Locked to English for Beta release
-
-        const audioElem = document.getElementById('bg-music');
-        if (audioElem && s.volume !== undefined && (s.volumeSet || Number(s.volume) !== 1)) {
-            audioElem.volume = Number(s.volume);
-            window.volumeUserSet = true;
-        }
-        const overlay = document.getElementById('crt-overlay');
-        if (overlay) {
-            overlay.style.display = currentTheme === 'crt' ? 'block' : 'none';
-            overlay.style.opacity = crtIntensity / 100;
-        }
-        const player = document.querySelector('.music-player');
-        if (player) {
-            player.style.display = musicEnabled ? 'block' : 'none';
-        }
-    } catch (e) { console.warn(e); }
-}
-
-// Clean return to main menu after an election without reloading the page or cutting off music
-
+// Show or hide the side panels to match the game state
 function syncSidebarVisibility() {
     const leftPanel = document.getElementById('left-panel');
     const mainPanel = document.getElementById('main-panel');
@@ -634,6 +418,7 @@ function syncSidebarVisibility() {
     }
 }
 
+// Return to the main menu after an election without reloading the page
 window.returnToTitleScreen = function() {
     clearTallyInterval();
     if (Object.keys(initialFactionsSnapshot).length > 0) {
@@ -646,104 +431,14 @@ window.returnToTitleScreen = function() {
     lastRenderedPortraitSignature = "";
     window.lastElectionSummary = null;
     window.electionPanelSnapshot = null;
+    window.epilogueActive = false;
 
     syncSidebarVisibility();
     updateUI();
     showStartMenu();
 };
 
-// --- ACHIEVEMENTS SYSTEM ---
-let unlockedAchievements = [];
-let ACHIEVEMENTS = [];
-
-try {
-    unlockedAchievements = JSON.parse(localStorage.getItem('habibie_achievements') || '[]');
-} catch (e) {
-    unlockedAchievements = [];
-}
-
-function checkAchievements() {
-    if (!gameStarted) return;
-
-    const curGovStab = getGovStability();
-    if (curGovStab < lowestGovStability) {
-        lowestGovStability = curGovStab;
-    }
-
-    const isEligibleDifficulty = ['medium', 'high', 'historical'].includes(selectedDifficulty);
-    if (isEligibleDifficulty) {
-        if (stats.pop >= 100) unlockAchievement('pop_max');
-        if (stats.cendana <= 0) unlockAchievement('cendana_zero');
-        if (factions['pdip'] && factions['pdip'].affinity >= 100) unlockAchievement('pdip_max');
-
-        const hasIMFDurability = activeDecrees['imf_fuel_subsidy'] && activeDecrees['imf_bulog_deregulation'] && activeDecrees['imf_ibra_liquidation'];
-        if (stats.intl >= 100 && stats.econ <= 15 && stats.pop <= 30 && hasIMFDurability) {
-            unlockAchievement('always_more_austerity');
-        }
-    }
-
-    if (sp3UpheldWithHighCendana) {
-        unlockAchievement('halo_andi');
-    }
-
-    if (bankBaliCleanSteps.frozeEGP && bankBaliCleanSteps.pwcAccess && completedInteractions['pdip_pansus_bankbali'] && bankBaliCleanSteps.declassifiedPwC) {
-        unlockAchievement('baligate_clean');
-    }
-
-    // Alt-History & Party-Banning Achievements
-    if (activeDecrees['ban_pdip_subversion']) {
-        unlockAchievement('kudatuli_redux');
-    }
-    if (activeDecrees['dissolve_golkar_old_guard']) {
-        unlockAchievement('beringin_tumbang');
-    }
-    if (activeDecrees['abolish_abri_mpr_seats'] && activeDecrees['abolish_kodam_territorial']) {
-        unlockAchievement('back_to_the_barracks');
-    }
-    if (activeDecrees['enforce_asas_tunggal_ban']) {
-        unlockAchievement('asas_tunggal_restored');
-    }
-}
-
-function unlockAchievement(id) {
-    if (!unlockedAchievements.includes(id)) {
-        unlockedAchievements.push(id);
-        try {
-            localStorage.setItem('habibie_achievements', JSON.stringify(unlockedAchievements));
-        } catch (e) { console.warn(e); }
-        const achv = ACHIEVEMENTS.find(a => a.id === id);
-        if (achv) showAchievementToast(achv);
-    }
-}
-
-const achievementToastQueue = [];
-let achievementToastBusy = false;
-
-function showAchievementToast(achv) {
-    achievementToastQueue.push(achv);
-    if (!achievementToastBusy) showNextAchievementToast();
-}
-
-function showNextAchievementToast() {
-    const toast = document.getElementById('achievement-toast');
-    const achv = achievementToastQueue.shift();
-    if (!toast || !achv) {
-        achievementToastBusy = false;
-        achievementToastQueue.length = 0;
-        return;
-    }
-    achievementToastBusy = true;
-    document.getElementById('toast-name').innerText = achv.title;
-    toast.style.display = 'block';
-    if (typeof window.playAchievementSfx === 'function') window.playAchievementSfx();
-    else if (typeof window.playPopupChime === 'function') window.playPopupChime();
-    setTimeout(() => {
-        toast.style.display = 'none';
-        if (achievementToastQueue.length > 0) setTimeout(showNextAchievementToast, 250);
-        else achievementToastBusy = false;
-    }, 3500);
-}
-
+// Built-in config used when config.json fails to load
 const fallbackConfig = {
     systemModifiers: {
         lowStatThreshold: 40, highStatThreshold: 60,
@@ -759,7 +454,7 @@ const fallbackConfig = {
     }
 };
 
-// --- PARALLELIZED INITIALIZATION & AUTOMATIC ENGLISH FALLBACK ---
+// PARALLELIZED INITIALIZATION & AUTOMATIC ENGLISH FALLBACK
 async function fetchJSONSafe(url, fallbackVal = null) {
     try {
         const res = await fetch(url);
@@ -788,13 +483,6 @@ async function fetchLocalizedJSON(url, fallbackVal = null) {
 
 // Persistent cache so the browser never garbage-collects decoded images mid-campaign
 window.__preloadedImages = window.__preloadedImages || [];
-window.__loaderSkipped = false;
-
-window.skipWin95LoadingScreen = function() {
-    window.__loaderSkipped = true;
-    const overlay = document.getElementById('win95-loader-overlay');
-    if (overlay) overlay.style.display = 'none';
-};
 
 // Recursively scans loaded JSON data (including inline HTML <img> tags) for image URLs
 function collectAllGameImageUrls(rootObj, urlSet) {
@@ -850,6 +538,7 @@ function preloadSingleImage(src) {
     });
 }
 
+// Load all localized JSON data with an English fallback
 async function loadLocalizedAssets(onStepProgress) {
     const step = (typeof onStepProgress === 'function') ? onStepProgress : () => {};
     const trackedFetch = (url, fallback) => fetchLocalizedJSON(url, fallback).then(res => {
@@ -954,8 +643,8 @@ async function loadLocalizedAssets(onStepProgress) {
     lastRenderedPortraitSignature = "";
 }
 
+// Preload and decode every referenced image behind the loading screen
 async function preloadAllAssetsWithWin95Modal(titleOverride) {
-    window.__loaderSkipped = false;
     const overlay = document.getElementById('win95-loader-overlay');
     const titleEl = document.getElementById('win95-loader-title');
     const flavorEl = document.getElementById('win95-loader-flavor');
@@ -979,7 +668,6 @@ async function preloadAllAssetsWithWin95Modal(titleOverride) {
 
     let fileTick = 0;
     const updateModalUI = (fraction) => {
-        if (window.__loaderSkipped) return;
         const clamped = Math.max(0, Math.min(1, fraction));
         const pct = Math.round(clamped * 100);
         if (pctEl) pctEl.innerText = pct + '%';
@@ -1049,12 +737,11 @@ async function preloadAllAssetsWithWin95Modal(titleOverride) {
     }
 
     updateModalUI(1);
-    if (!window.__loaderSkipped) {
-        await new Promise(r => setTimeout(r, 180));
-    }
+    await new Promise(r => setTimeout(r, 180));
     if (overlay) overlay.style.display = 'none';
 }
 
+// Start the game: load assets and settings, then show the start menu
 async function initGame() {
     try {
         loadUserSettings();
@@ -1079,11 +766,10 @@ async function initGame() {
     }
 }
 
+// Run initGame when the page loads
 window.addEventListener('load', initGame);
 
-// --- AUDIO PLAYER LOGIC ---
-// The Play/Pause button and the taskbar speaker are driven by the audio element's own events,
-// so they can never disagree with what is actually playing (play() is asynchronous).
+// Audio player: Play/Pause button and taskbar speaker are driven by the audio element's own events
 window.syncMusicUI = function() {
     const audio = document.getElementById('bg-music');
     const btn = document.getElementById('play-pause-btn');
@@ -1091,6 +777,7 @@ window.syncMusicUI = function() {
     if (typeof updateWin95Taskbar === 'function') updateWin95Taskbar();
 };
 
+// Keep the music buttons in sync with the audio element's events
 function wireMusicStateEvents() {
     const audio = document.getElementById('bg-music');
     if (!audio || audio.dataset.wired) return;
@@ -1099,6 +786,7 @@ function wireMusicStateEvents() {
     window.syncMusicUI();
 }
 
+// Set up the music player and its track list
 function setupMusicPlayer() {
     if (musicTracks.length === 0) return;
     const select = document.getElementById('music-select');
@@ -1137,6 +825,16 @@ function setupMusicPlayer() {
         return;
     }
 
+    window.syncMusicUI();
+}
+
+// Start the background music the first time a campaign begins or is resumed
+let musicAutoStarted = false;
+function startBackgroundMusic() {
+    if (musicAutoStarted) return;
+    const audio = document.getElementById('bg-music');
+    if (!audio || !musicEnabled || musicTracks.length === 0) return;
+    musicAutoStarted = true;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
         playPromise.catch(() => {
@@ -1156,31 +854,34 @@ function setupMusicPlayer() {
     }
 }
 
+// Switch to the selected music track
 window.changeMusic = function() {
     const select = document.getElementById('music-select');
     const audio = document.getElementById('bg-music');
 
     audio.src = select.value;
-    audio.play().catch(() => {});
+    if (gameStarted) audio.play().catch(() => {});
 };
 
+// Play or pause the music
 window.toggleMusic = function() {
     const audio = document.getElementById('bg-music');
     // Respect "Enable Music Player" and a missing track list (taskbar speaker also calls this)
     if (!audio || !musicEnabled || musicTracks.length === 0) return;
 
     if (audio.paused) {
-        audio.play().catch(() => {});
+        if (gameStarted) audio.play().catch(() => {});
     } else {
         audio.pause();
     }
 };
 
-// --- CLAMPING & CALCULATION HELPERS ---
+// CLAMPING & CALCULATION HELPERS
 function clampPC(val) {
     return Math.max(0, Math.min(100, Math.round(val)));
 }
 
+// Clamp a dashboard stat to its allowed range
 function clampDashboard(key, val) {
     const rounded = Math.round(val);
     if (key === 'cendana') return Math.max(0, Math.min(maxCendana, rounded));
@@ -1188,15 +889,18 @@ function clampDashboard(key, val) {
     return Math.max(min, Math.min(100, rounded));
 }
 
+// Clamp a faction affinity to its allowed range
 function clampFaction(key, val) {
     const min = minFactions[key] || 0;
     return Math.max(min, Math.min(100, Math.round(val * 10) / 10));
 }
 
+// Government Stability: average of all national metrics with Cendana inverted
 function getGovStability() {
     return Math.round((stats.pop + stats.mil + stats.ref + stats.econ + stats.intl + stats.stab + (100 - stats.cendana)) / 7);
 }
 
+// Extra action cost caused by low or high National Stability
 function getStabilityCostModifier() {
     if (stats.stab < 40) {
         return Math.ceil((40 - stats.stab) / 6);
@@ -1207,12 +911,14 @@ function getStabilityCostModifier() {
     return 0;
 }
 
+// Final PC cost of a decree after difficulty and stability modifiers
 function computeDecreeCost(baseCost) {
     const diffMod = gameConfig.difficultySettings[selectedDifficulty].actionCostMod || 0;
     const stabMod = getStabilityCostModifier();
     return Math.max(5, Math.round(baseCost + diffMod + stabMod));
 }
 
+// Final PC cost of a faction action, including leverage
 function computeFactionActionCost(factionKey, baseCost) {
     if (baseCost <= 0) return 0;
     const diffMod = gameConfig.difficultySettings[selectedDifficulty].actionCostMod || 0;
@@ -1221,7 +927,7 @@ function computeFactionActionCost(factionKey, baseCost) {
     return Math.max(3, Math.round((baseCost + diffMod + stabMod) * leverage.costMult));
 }
 
-// --- VAGUE EFFECT FORMATTER FOR TOOLTIPS (NO NUMBERS OR PERCENTAGES) ---
+// VAGUE EFFECT FORMATTER FOR TOOLTIPS (NO NUMBERS OR PERCENTAGES)
 function formatEffectString(effects) {
     if (!effects) return "";
     const parts = [];
@@ -1273,7 +979,7 @@ function formatEffectString(effects) {
     return `<br><span style="font-size: 10px; font-family: MS Sans Serif; font-weight: normal;">[ ${parts.join(" &bull; ")} ]</span>`;
 }
 
-// --- CORE LOGIC FUNCTIONS (WITH QUALITATIVE TREND ARROWS) ---
+// CORE LOGIC FUNCTIONS (WITH QUALITATIVE TREND ARROWS)
 function getVagueStatText(statKey, val) {
     const statTiers = dashboardStats[statKey];
     let baseHTML = `<font color="#8B0000">Unknown</font>`;
@@ -1299,6 +1005,7 @@ function getVagueStatText(statKey, val) {
     return baseHTML;
 }
 
+// Mood tier (text, color, overlay) for a faction's affinity
 function getMoodData(factionKey, aff) {
     const f = factions[factionKey];
     if (!f || !f.moods || f.moods.length === 0) {
@@ -1310,11 +1017,10 @@ function getMoodData(factionKey, aff) {
     return f.moods[f.moods.length - 1];
 }
 
-// ==========================================
 // MPR DASHBOARD TABS & PARLIAMENT HEMICYCLE
-// ==========================================
-let mprDashboardTab = 'factions'; // 'factions' | 'parliament'
+let mprDashboardTab = 'factions';
 
+// Historical party swatch color for each faction
 const FACTION_HISTORICAL_COLORS = {
     'pdip':            { fill: '#C0392B', border: '#FF7777', label: 'PDI-P' },
     'utusan_golongan': { fill: '#7F8C8D', border: '#BDC3C7', label: 'U. Golongan' },
@@ -1328,11 +1034,13 @@ const FACTION_HISTORICAL_COLORS = {
     'abri':            { fill: '#556B2F', border: '#A3C266', label: 'ABRI' }
 };
 
+// Order in which factions are seated in the hemicycle
 const PARLIAMENT_SEATING_ORDER = [
-    'pdip', 'utusan_golongan', 'pkb', 'poros_tengah', 'ppp',
-    'other_parties', 'utusan_daerah', 'golkar_habibie', 'golkar_akbar', 'abri'
+    'pdip', 'poros_tengah', 'pkb', 'ppp', 'golkar_habibie', 'golkar_akbar',
+    'other_parties', 'utusan_daerah', 'utusan_golongan', 'abri'
 ];
 
+// Switch between the MPR dashboard tabs
 window.switchMPRTab = function(tabName) {
     if (mprDashboardTab === tabName) return;
     mprDashboardTab = tabName;
@@ -1341,6 +1049,7 @@ window.switchMPRTab = function(tabName) {
     updateUI();
 };
 
+// Highlight one faction's seats in the hemicycle
 window.highlightParliamentFaction = function(factionKey, isMobileTap = false) {
     const f = factions[factionKey];
     if (!f) return;
@@ -1367,6 +1076,7 @@ window.highlightParliamentFaction = function(factionKey, isMobileTap = false) {
     });
 };
 
+// Remove the hemicycle highlight
 window.clearParliamentHighlight = function() {
     if (window.innerWidth <= 820 && window.mobileSelectedParliamentFaction) return;
     const infoBar = document.getElementById('mpr-parliament-hover-info');
@@ -1380,6 +1090,7 @@ window.clearParliamentHighlight = function() {
     });
 };
 
+// Handle a tap or click on a hemicycle seat
 window.handleParliamentSeatClick = function(factionKey) {
     if (window.innerWidth <= 820) {
         if (window.mobileSelectedParliamentFaction !== factionKey) {
@@ -1391,6 +1102,7 @@ window.handleParliamentSeatClick = function(factionKey) {
     openFactionMenu(factionKey);
 };
 
+// Draw the 700-seat hemicycle and the faction legend
 function renderParliamentHemicycleTab() {
     const activeOrder = PARLIAMENT_SEATING_ORDER.filter(k => portraitFactions.includes(k));
     let totalSeats = 0;
@@ -1464,6 +1176,7 @@ function renderParliamentHemicycleTab() {
     return html;
 }
 
+// Cached lookup of UI elements by id
 const _uiElCache = {};
 function uiEl(id) {
     let el = _uiElCache[id];
@@ -1474,6 +1187,7 @@ function uiEl(id) {
     return el;
 }
 
+// Redraw the status panel, MPR dashboard and portraits
 function updateUI() {
     uiEl('val-pc').innerText = stats.PC;
 
@@ -1504,7 +1218,8 @@ function updateUI() {
 
     const whipElem = uiEl('whip-projection-display');
     if (whipElem) {
-        whipElem.innerHTML = getVagueWhipProjection();
+        window.whipTrendHTML = getWhipTrendHTML();
+        whipElem.innerHTML = getVagueWhipProjection() + window.whipTrendHTML;
     }
 
     if (gameStarted) {
@@ -1617,6 +1332,7 @@ function updateUI() {
     if (typeof updateWin95Taskbar === 'function') updateWin95Taskbar();
 }
 
+// Resolve [min, max] effect ranges into random values
 function rollEffectRanges(eff) {
     const resolved = {};
     for (const key in eff) {
@@ -1641,12 +1357,14 @@ function rollEffectRanges(eff) {
     return resolved;
 }
 
-// --- PC INCOME/SPEND DEBUG LOGGER ---
+// PC INCOME/SPEND DEBUG LOGGER
 window.pcLog = [];
+// Record a PC change in the PC log
 function logPCChange(delta, reason) {
     if (!delta) return;
     window.pcLog.push({ turn: currentTurn, delta: delta, reason: reason, balanceAfter: stats.PC });
 }
+// Show the PC income and spend log
 window.showPCLog = function() {
     console.log('--- Full PC Ledger ---');
     console.table(window.pcLog);
@@ -1689,6 +1407,7 @@ function applyMilitaryDelta(delta) {
     stats.mil = Math.round(factions['abri'].affinity);
 }
 
+// Apply an effects object to stats and factions
 function applyEffects(eff, updateSnapshot = true) {
     if (!eff) return;
     if (updateSnapshot) prevStatsSnapshot = { ...stats };
@@ -1728,30 +1447,7 @@ function applyEffects(eff, updateSnapshot = true) {
     }
 }
 
-// --- MENU & TUTORIAL SYSTEM ---
-window.showAchievementsMenu = function() {
-    if (!enterMenuView()) return;
-    scrollMainPanelToTop();
-    let html = '<center><h2>Achievements</h2></center>';
-    html += '<p style="font-family: MS Sans Serif; font-size: 13px; color: #333; text-align: center; margin-bottom: 20px;">Review your historical milestones and earned commendations below.</p>';
-
-    ACHIEVEMENTS.forEach(achv => {
-        const isUnlocked = unlockedAchievements.includes(achv.id);
-        const iconClass = isUnlocked ? 'unlocked' : 'locked';
-
-        html += `<div class="achievement-row">
-                    <div class="achievement-icon ${iconClass}"><img src="${achv.icon}" alt="Achv"></div>
-                    <div class="achievement-details">
-                        <div class="achievement-title">${achv.title}</div>
-                        <div class="achievement-desc">${achv.desc}</div>
-                    </div>
-                 </div>`;
-    });
-
-    html += `<center><button style="width: 250px; margin-top: 20px; background-color: #ff9999; text-align: center;" onclick="returnToPreviousView()">Back</button></center>`;
-    document.getElementById('main-panel').innerHTML = html;
-};
-
+// Show the credits screen
 window.showCredits = function() {
     if (!enterMenuView()) return;
     scrollMainPanelToTop();
@@ -1777,6 +1473,7 @@ window.showCredits = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Show the sound effect credits
 window.showSfxCredits = function() {
     scrollMainPanelToTop();
     let html = '<center><h2>SOUND EFFECTS</h2></center>';
@@ -1791,6 +1488,7 @@ window.showSfxCredits = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Show the image credits
 window.showImageCredits = function() {
     scrollMainPanelToTop();
     let html = '<center><h2>IMAGES &amp; ARCHIVAL PHOTOGRAPHY</h2></center>';
@@ -1806,6 +1504,7 @@ window.showImageCredits = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Show the music credits
 window.showMusicCredits = function() {
     scrollMainPanelToTop();
     let html = '<center><h2>MUSIC &amp; AUDIO</h2></center>';
@@ -1820,6 +1519,7 @@ window.showMusicCredits = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Show the sources screen
 window.showSources = function() {
     scrollMainPanelToTop();
     let html = '<center><h2>HISTORICAL SOURCES</h2></center>';
@@ -1835,132 +1535,7 @@ window.showSources = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
-// ==========================================================================
-// BINA GRAHA REFERENCE LIBRARY / GLOSSARY (INDONESIAN TERMS & ORGANISATIONS)
-// ==========================================================================
-window.showLibraryMenu = function(category = null, preserveScroll = false) {
-    if (!enterMenuView()) return;
-    if (!preserveScroll) scrollMainPanelToTop();
-    if (category !== null) {
-        currentLibraryCategory = category;
-    }
-
-    const categories = [
-        'All',
-        'Persons',
-        'Institutions',
-        'Laws & Decrees',
-        'Parties & Factions',
-        'Military & Security',
-        'Economy & KKN',
-        'Society & Movements',
-        'Political Terms'
-    ];
-
-    let html = '<center><h2>LIBRARY</h2></center>';
-
-    // Full-Width Search Bar & Category Filter Box
-    html += `<div class="library-controls-box">
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; width: 100%;">
-            <input type="text" id="library-search-input" class="library-search-input" style="width: 100%; flex: 1;" placeholder="Search laws, terms, acronyms, or organisations (e.g., UU No. 23/1999, ABRI, BLBI, Cendana)..." value="${escapeAttr(currentLibrarySearch)}" oninput="filterLibraryEntries(this.value)">
-            <button style="width: auto; display: inline-block; --py: 4px; --px: 12px; margin: 0; font-size: 11px; text-align: center; flex-shrink: 0;" onclick="clearLibrarySearch()">Clear</button>
-        </div>
-        <div style="text-align: center; border-top: 1px solid #808080; padding-top: 6px;">`;
-
-    categories.forEach(cat => {
-        const isCur = (currentLibraryCategory === cat);
-        html += `<button class="${isCur ? 'is-selected' : ''}" style="width: auto; display: inline-block; margin: 2px; --py: 4px; --px: 9px; font-size: 11px; " onclick="selectLibraryCategory('${cat}')">${cat}</button>`;
-    });
-
-    html += `</div></div>`;
-
-    // Entries Container
-    html += `<div id="library-entries-container">${renderLibraryEntriesHTML()}</div>`;
-
-    html += `<center><button style="width: 250px; margin-top: 16px; background-color: #ff9999; text-align: center; " onclick="returnToPreviousView()">${gameStarted ? 'Back to Game' : 'Back'}</button></center>`;
-
-    document.getElementById('main-panel').innerHTML = html;
-};
-
-window.selectLibraryCategory = function(cat) {
-    showLibraryMenu(cat, true);
-};
-
-window.filterLibraryEntries = function(query) {
-    currentLibrarySearch = query || '';
-    const container = document.getElementById('library-entries-container');
-    if (container) {
-        container.innerHTML = renderLibraryEntriesHTML();
-    }
-};
-
-window.clearLibrarySearch = function() {
-    currentLibrarySearch = '';
-    const input = document.getElementById('library-search-input');
-    if (input) input.value = '';
-    const container = document.getElementById('library-entries-container');
-    if (container) {
-        container.innerHTML = renderLibraryEntriesHTML();
-    }
-};
-
-function renderLibraryEntriesHTML() {
-    if (!libraryData || libraryData.length === 0) {
-        return `<div class="faction-summary" style="text-align: center; color: #8B0000;">Library data (<b>localization/library.json</b>) not loaded or empty.</div>`;
-    }
-
-    const q = currentLibrarySearch.trim().toLowerCase();
-    const filtered = libraryData.filter(item => {
-        const matchesCat = (currentLibraryCategory === 'All') || (item.category === currentLibraryCategory);
-        if (!matchesCat) return false;
-        if (!q) return true;
-        const termMatch = (item.term || '').toLowerCase().includes(q);
-        const subMatch = (item.subtitle || '').toLowerCase().includes(q);
-        const descMatch = (item.desc || '').toLowerCase().includes(q);
-        return termMatch || subMatch || descMatch;
-    });
-
-    if (filtered.length === 0) {
-        return `<div class="faction-summary" style="text-align: center; font-style: italic; color: #555;">No matching glossary entries found for "<b>${escapeAttr(currentLibrarySearch)}</b>" in <b>${currentLibraryCategory}</b>.</div>`;
-    }
-
-    let html = `<div style="font-size: 11px; color: #444; margin-bottom: 6px; text-align: right;">Showing <b>${filtered.length}</b> ${filtered.length === 1 ? 'entry' : 'entries'}</div>`;
-    html += `<div class="library-list-well">`;
-
-    filtered.forEach(item => {
-        const hasPortrait = Boolean(item.image || item.category === 'Persons');
-        const imgSrc = item.image || '';
-        const shortLabel = escapeAttr((item.term || 'PHOTO').split('(')[0].trim().toUpperCase());
-
-        if (hasPortrait) {
-            html += `<div class="library-entry-card library-entry-with-portrait">
-                <div class="library-person-portrait">
-                    <span>[ PHOTO:<br>${shortLabel} ]</span>
-                    ${imgSrc ? `<img src="${imgSrc}" class="portrait-img" alt="${shortLabel}" onerror="this.style.display='none'">` : ''}
-                </div>
-                <div class="library-entry-content">
-                    <div class="library-entry-header">
-                        <span class="library-entry-term">${item.term}</span>
-                    </div>
-                    ${item.subtitle ? `<div class="library-entry-sub">${item.subtitle}</div>` : ''}
-                    <div class="library-entry-desc">${item.desc}</div>
-                </div>
-            </div>`;
-        } else {
-            html += `<div class="library-entry-card">
-                <div class="library-entry-header">
-                    <span class="library-entry-term">${item.term}</span>
-                </div>
-                ${item.subtitle ? `<div class="library-entry-sub">${item.subtitle}</div>` : ''}
-                <div class="library-entry-desc">${item.desc}</div>
-            </div>`;
-        }
-    });
-
-    html += `</div>`;
-    return html;
-}
-
+// Expand or collapse the Effects settings card
 window.toggleSettingsEffects = function() {
     const cb = document.getElementById('settings-effects-toggle');
     if (cb) {
@@ -1969,6 +1544,7 @@ window.toggleSettingsEffects = function() {
     }
 };
 
+// Enable or disable the music player
 window.toggleMusicEnabled = function() {
     const cb = document.getElementById('settings-music-toggle');
     if (cb) {
@@ -1988,21 +1564,86 @@ window.toggleMusicEnabled = function() {
     }
 };
 
-window.setTheme = function(theme) {
-    currentTheme = theme;
+// Applies all three appearance settings to the page. Safe to call repeatedly.
+window.applyAppearance = function() {
+    const root = document.documentElement;
+    root.setAttribute('data-wstyle', windowStyle);
+    root.setAttribute('data-scheme', colorScheme);
+
+    // Window style = one extra stylesheet appended after news.css (so it wins); Default Win95 has none
+    let link = document.getElementById('theme-css');
+    const href = WINDOW_STYLES[windowStyle] && WINDOW_STYLES[windowStyle].css;
+    if (!href) {
+        if (link) link.remove();
+    } else {
+        if (!link) {
+            link = document.createElement('link');
+            link.id = 'theme-css';
+            link.rel = 'stylesheet';
+            document.head.appendChild(link);
+        }
+        if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+    }
+
+    // CRT scanlines are an overlay, independent of the two above
     const overlay = document.getElementById('crt-overlay');
     if (overlay) {
-        if (theme === 'crt') {
-            overlay.style.display = 'block';
-            overlay.style.opacity = crtIntensity / 100;
-        } else {
-            overlay.style.display = 'none';
-        }
+        overlay.style.display = crtEnabled ? 'block' : 'none';
+        overlay.style.opacity = crtIntensity / 100;
     }
+
+    // The other effects are pure CSS: data-fx lists the active ones (see css/effects.css)
+    const active = EFFECTS.filter(e => isEffectOn(e.id)).map(e => e.id);
+    if (active.length) root.setAttribute('data-fx', active.join(' '));
+    else root.removeAttribute('data-fx');
+};
+
+// Whether an effect is switched on
+window.isEffectOn = function(id) {
+    return id === 'crt' ? crtEnabled : Boolean(effectsOn[id]);
+};
+
+// Turn one effect on or off and apply it
+window.setEffect = function(id, on) {
+    if (id === 'crt') crtEnabled = Boolean(on);
+    else if (Object.prototype.hasOwnProperty.call(effectsOn, id)) effectsOn[id] = Boolean(on);
+    else return;
+    applyAppearance();
     saveUserSettings();
     showSettingsMenu(true);
 };
 
+// Master switch: every effect on, or every effect off
+window.setAllEffects = function(on) {
+    crtEnabled = Boolean(on);
+    Object.keys(effectsOn).forEach(k => { effectsOn[k] = Boolean(on); });
+    applyAppearance();
+    saveUserSettings();
+    showSettingsMenu(true);
+};
+
+// Choose a window style and apply it
+window.setWindowStyle = function(id) {
+    if (!WINDOW_STYLES[id]) return;
+    windowStyle = id;
+    applyAppearance();
+    saveUserSettings();
+    showSettingsMenu(true);
+};
+
+// Choose a color scheme and apply it
+window.setColorScheme = function(id) {
+    if (!COLOR_SCHEMES[id]) return;
+    colorScheme = id;
+    applyAppearance();
+    saveUserSettings();
+    showSettingsMenu(true);
+};
+
+// Turn CRT scanlines on or off
+window.setCRT = function(on) { setEffect('crt', on); };
+
+// Apply the CRT intensity slider
 window.updateCRTIntensity = function() {
     const slider = document.getElementById('crt-slider');
     const display = document.getElementById('crt-display');
@@ -2015,6 +1656,7 @@ window.updateCRTIntensity = function() {
     }
 };
 
+// Apply the volume slider to the music
 window.updateVolume = function() {
     const slider = document.getElementById('volume-slider');
     const audio = document.getElementById('bg-music');
@@ -2027,6 +1669,7 @@ window.updateVolume = function() {
     }
 };
 
+// Apply the text size setting to the page
 function applyTextScale(scaleValue) {
     textScale = Number(scaleValue);
     const scale = textScale / 100;
@@ -2054,6 +1697,7 @@ function applyTextScale(scaleValue) {
     `;
 }
 
+// Apply the text size slider
 window.updateTextScale = function() {
     const slider = document.getElementById('text-scale-slider');
     const display = document.getElementById('text-scale-display');
@@ -2064,6 +1708,7 @@ window.updateTextScale = function() {
     }
 };
 
+// Show a page of the history screen
 window.showHistory = function(pageIndex) {
     clearTallyInterval();
     scrollMainPanelToTop();
@@ -2095,7 +1740,7 @@ window.showHistory = function(pageIndex) {
     html += `<h3 style="text-align: center; color: #000080; margin-bottom: 12px;">${pageTitle}</h3>`;
 
     if (pageImg) {
-        html += `<center><img src="${pageImg}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(pageTitle)}"></center>`;
+        html += `<center><img src="${pageImg}" class="content-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(pageTitle)}"></center>`;
     }
 
     html += '<div class="faction-summary" style="padding: 15px; margin-bottom: 12px; min-height: 220px;">' + pageText + '</div>';
@@ -2114,6 +1759,7 @@ window.showHistory = function(pageIndex) {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Show a page of the tutorial
 window.showTutorial = function(pageIndex) {
     clearTallyInterval();
     scrollMainPanelToTop();
@@ -2158,6 +1804,7 @@ window.showTutorial = function(pageIndex) {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Switch the game language (locked to English)
 window.setLanguage = async function(lang) {
     if (lang !== 'en' || currentLang === lang) return;
     currentLang = 'en';
@@ -2167,6 +1814,7 @@ window.setLanguage = async function(lang) {
     showStartMenu();
 };
 
+// Build the HTML for one update or announcement entry
 function renderUpdateEntry(u, isID) {
     const versionLabel = isID ? 'Versi' : 'Version';
     const meta = [u.version ? `${versionLabel} <b>${u.version}</b>` : '', u.date || ''].filter(Boolean).join(' &bull; ');
@@ -2201,6 +1849,7 @@ function renderUpdateNotice(isID) {
     return html;
 }
 
+// Render the main menu
 window.showStartMenu = function() {
     clearTallyInterval();
     scrollMainPanelToTop();
@@ -2213,7 +1862,7 @@ window.showStartMenu = function() {
     let html = `<div class="title-screen-banner">
         <div class="title-screen-banner-placeholder-text">
             Why did it break nya.... :(<br>
-            <span style="font-size: 11px; font-weight: normal;">Drop <b>photo/title_banner.png</b> (or set <b>titleBannerImage</b> in config.json)</span>
+            <span style="font-size: 11px; font-weight: normal;">Kenapa gk bekerja ya?? :(((</span>
         </div>
         <img src="${titleImg}" alt="[Title Banner]" onerror="this.style.display='none'">
     </div>`;
@@ -2265,6 +1914,7 @@ window.showStartMenu = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Render the difficulty selection menu
 window.showDifficultyMenu = function() {
     scrollMainPanelToTop();
     let html = '<center><h2>SELECT DIFFICULTY</h2></center>';
@@ -2278,7 +1928,7 @@ window.showDifficultyMenu = function() {
 
     const selDef = gameConfig.difficultySettings[selectedDifficulty];
     if (selDef.image) {
-        html += `<center><img src="${selDef.image}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(selDef.name)} Difficulty"></center>`;
+        html += `<center><img src="${selDef.image}" class="content-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(selDef.name)} Difficulty"></center>`;
     }
 
     html += '<div style="padding: 10px; background-color: #FFFFFF; border: none; margin-bottom: 15px; font-family: MS Sans Serif; font-size: 13px; line-height: 1.4; text-align: justify;">';
@@ -2297,11 +1947,12 @@ window.showDifficultyMenu = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Render the opening situation briefing
 window.showSituation = function() {
     scrollMainPanelToTop();
     let html = '<center><h2>THE SITUATION</h2></center>';
     if (gameConfig && gameConfig.situationImage) {
-        html += `<center><img src="${gameConfig.situationImage}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="The Situation"></center>`;
+        html += `<center><img src="${gameConfig.situationImage}" class="content-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="The Situation"></center>`;
     }
     html += '<div style="padding: 15px; margin-bottom: 20px; font-family: MS Sans Serif, sans-serif; font-size: 13px; line-height: 1.6; color: #333; text-align: justify;">';
     html += '<b>Dear Mr. President,</b><br><br>';
@@ -2321,6 +1972,7 @@ window.showSituation = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Select a difficulty and refresh the menu
 window.selectDifficulty = function(diff) {
     selectedDifficulty = diff;
     if (diff === 'historical') showOptionEffects = false;
@@ -2328,6 +1980,7 @@ window.selectDifficulty = function(diff) {
     showDifficultyMenu();
 };
 
+// Toggle whether option effects are shown
 window.toggleEffects = function() {
     const cb = document.getElementById('effects-toggle');
     if (cb) {
@@ -2336,8 +1989,10 @@ window.toggleEffects = function() {
     }
 };
 
+// Reset state and begin a new campaign
 window.startGame = function() {
     clearTallyInterval();
+    startBackgroundMusic();
     const def = gameConfig.difficultySettings[selectedDifficulty];
 
     clearCampaignSave();
@@ -2400,12 +2055,13 @@ window.startGame = function() {
     loadPhase();
 };
 
+// Show Habibie's biography
 window.showHabibieBio = function() {
     if (!enterMenuView()) return;
     scrollMainPanelToTop();
     let html = '<h2>B.J. Habibie</h2>';
     if (gameConfig && gameConfig.habibieCoverImage) {
-        html += `<center><img src="${gameConfig.habibieCoverImage}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="B.J. Habibie"></center>`;
+        html += `<center><img src="${gameConfig.habibieCoverImage}" class="content-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="B.J. Habibie"></center>`;
     }
     html += '<div class="faction-summary"><p>Bacharuddin Jusuf Habibie was born on June 25, 1936, in Parepare, South Sulawesi, the fourth of eight children in a family of Gorontalese and Bugis descent. His father, an agricultural official, died of a heart attack in 1950 when Habibie was just 14, and his mother sold off family land to keep him in school. After a year studying mechanical engineering at Bandung Institute of Technology, he won a government scholarship in 1955 to study aviation in Europe. He had hoped to attend Delft in the Netherlands, but the ongoing dispute between Jakarta and The Hague over West New Guinea made that impossible, and he was redirected instead to RWTH Aachen in West Germany, where he would spend the next decade of his life.</p><p>Living on a strict budget through brutal German winters, Habibie earned his Diplom-Ingenieur in 1960 and his doctorate in 1965, graduating summa cum laude with a dissertation so highly rated it became something of a legend at the university. He joined the aircraft manufacturer Messerschmitt-Bolkow-Blohm, rising over the following years to vice president and head of its technology division. There he developed pioneering methods for calculating how cracks propagate through aircraft fuselages under structural stress, work still referenced in aviation engineering today and the origin of his lifelong nickname, Mr. Crack. In 1974, Suharto sent an emissary to Aachen to summon him home, and Habibie returned to lead Indonesia\'s fledgling aircraft industry, founding what would become PT Industri Pesawat Terbang Nusantara, IPTN, in 1976.</p><p>For the next two decades, from 1978 to 1998, he served as State Minister of Research and Technology, using that post and his chairmanship of the government\'s technology and strategic industries agencies to build an entire generation of Indonesian engineers and pour state funding into ambitious, sometimes extravagant projects, most famously the N-250 turboprop, which he watched fly for the first time on August 10, 1995, as living proof that Indonesia could compete with the developed world on its own terms. In 1990 he founded the Association of Indonesian Muslim Intellectuals, ICMI, with Suharto\'s blessing, and it quickly became both a genuine incubator for modernist Muslim technocrats and a political base that reached far beyond the world of engineering. Suharto named him Vice President on March 10, 1998, a choice international investors and reform activists alike treated with open skepticism. Barely ten weeks later, as the Asian Financial Crisis gutted the rupiah and students occupied the grounds of the DPR building demanding an end to three decades of authoritarian rule, Suharto resigned on May 21, 1998, and Habibie was sworn in as president that same afternoon, inheriting a government he had spent twenty years helping to build and now found himself tasked with dismantling from the inside, stabilizing an economy in freefall, and defending a mandate that neither the old guard nor the secular nationalist opposition ever fully accepted as legitimate.</p></div>';
 
@@ -2413,217 +2069,18 @@ window.showHabibieBio = function() {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Show a faction's biography
 window.showFactionBio = function(factionKey) {
     scrollMainPanelToTop();
     const f = factions[factionKey];
     let html = '<h2> ' + f.name + '</h2>';
     if (f.coverImage) {
-        html += `<center><img src="${f.coverImage}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(f.name)} Biography"></center>`;
+        html += `<center><img src="${f.coverImage}" class="content-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(f.name)} Biography"></center>`;
     }
     html += '<div class="faction-summary">' + f.biography + '</div>';
     html += '<button style="background-color: #ff9999; text-align: center;" onclick="openFactionMenu(\'' + factionKey + '\')">Back</button>';
     document.getElementById('main-panel').innerHTML = html;
 };
-
-// ==========================================================================
-// PRE-VOTE FACTION STANCE BREAKDOWN & EVENT RENDERER
-// ==========================================================================
-function getPreVoteFactionStanceHTML() {
-    const backing = [];
-    const hedging = [];
-    const opposing = [];
-    const favorsHeld = [];
-
-    let activeSeats = 0;
-    for (let i = 0; i < portraitFactions.length; i++) {
-        const key = portraitFactions[i];
-        const f = factions[key];
-        if (!f || f.seats <= 0 || bannedFactions[key]) continue;
-
-        activeSeats += f.seats;
-        const mood = getMoodData(key, f.affinity);
-        const blocType = (key === 'pdip' || key === 'poros_tengah' || key === 'abri') ? 'Disciplined Bloc' : 'Split Caucus';
-        const entry = `<b>${f.name}</b> (${f.seats} seats &bull; <i>${blocType}</i>): <font color="${mood.color}"><b>${mood.text}</b></font>`;
-
-        if (f.affinity >= 60) backing.push(entry);
-        else if (f.affinity >= 42) hedging.push(entry);
-        else opposing.push(entry);
-
-        if (f.favor && f.favor > 0) {
-            favorsHeld.push(`<b>${f.short}</b> (${f.favor > 1 ? f.favor + ' IOUs' : '1 IOU'})`);
-        }
-    }
-
-    const majorityNeeded = Math.floor(activeSeats / 2) + 1;
-    let cendanaWarning = "";
-    if (stats.cendana >= 70) {
-        cendanaWarning = `<div style="margin-top: 6px; color: #8B0000; font-weight: bold;">Emissaries from Jalan Cendana are actively working hotel suites to peel away wavering delegates behind the secret-ballot curtain.</div>`;
-    } else if (stats.cendana <= 30) {
-        cendanaWarning = `<div style="margin-top: 6px; color: #006400; font-weight: bold;">With Jalan Cendana's patronage network crippled, old-guard brokers lack the funds to sabotage us tonight.</div>`;
-    }
-
-    return `<div class="pre-vote-whip-box">
-        <div class="music-header">(${majorityNeeded} Votes Needed to secure the Presidency) </div>
-        <div style="padding: 8px 10px; font-size: 12px; line-height: 1.6; background-color: #F8F8F8; box-shadow: var(--bevel-sunken);">
-            <div style="margin-bottom: 4px;"><b>${getVagueWhipProjection()}</div>
-            <hr style="margin: 6px 0;">
-            <div><font color="#006400"><b>&#9632; Expected to Back the President:</b></font><br>
-                ${backing.length > 0 ? backing.map(x => '&nbsp;&nbsp;&bull; ' + x).join('<br>') : '&nbsp;&nbsp;<i>No caucuses firmly locked in</i>'}
-            </div>
-            <div style="margin-top: 5px;"><font color="#B8860B"><b>&#9632; Hedging / Divided on the Floor:</b></font><br>
-                ${hedging.length > 0 ? hedging.map(x => '&nbsp;&nbsp;&bull; ' + x).join('<br>') : '&nbsp;&nbsp;<i>No undecided swing caucuses</i>'}
-            </div>
-            <div style="margin-top: 5px;"><font color="#8B0000"><b>&#9632; Preparing to Reject the Speech:</b></font><br>
-                ${opposing.length > 0 ? opposing.map(x => '&nbsp;&nbsp;&bull; ' + x).join('<br>') : '&nbsp;&nbsp;<i>No caucuses in open opposition</i>'}
-            </div>
-            <div style="border-top: 1px dotted #808080; margin-top: 6px; padding-top: 5px;">
-                <b>Unspent Favors Securing the Floor:</b> ${favorsHeld.length > 0 ? '<font color="#000080">' + favorsHeld.join(', ') + '</font>' : '<i>None</i>'}
-            </div>
-            ${cendanaWarning}
-        </div>
-    </div>`;
-}
-
-function renderEventMenu() {
-    clearTallyInterval();
-    scrollMainPanelToTop();
-    const ev = events[currentTurn - 1];
-    if (!ev) { returnToPreviousView(); return; }
-    let html = '<h2>' + ev.title + '</h2>';
-    if (ev.image) {
-        html += `<center><img src="${ev.image}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(ev.title)}"></center>`;
-    }
-    html += '<p style="text-align: justify; font-family: MS Sans Serif, sans-serif; font-size: 13px; line-height: 1.5; color: #333;">' + ev.desc + '</p><br>';
-
-    // Inject Live Pre-Vote Faction Stance Breakdown on the Final Two Turns (Speech & Eve of Vote)
-    if (currentTurn >= events.length - 1) {
-        html += getPreVoteFactionStanceHTML();
-    }
-
-    if (!ev.shuffledIndices) {
-        const indices = [];
-        for (let i = 0; i < ev.options.length; i++) indices.push(i);
-        for (let i = indices.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const temp = indices[i];
-            indices[i] = indices[j];
-            indices[j] = temp;
-        }
-        ev.shuffledIndices = indices;
-    }
-
-    for (let i = 0; i < ev.shuffledIndices.length; i++) {
-        const originalIndex = ev.shuffledIndices[i];
-        const opt = ev.options[originalIndex];
-        const effectString = (showOptionEffects && opt.effects) ? formatEffectString(opt.effects) : "";
-        html += `<button onclick="resolveEvent(${originalIndex})">${opt.text}${effectString}</button>`;
-    }
-
-    document.getElementById('main-panel').innerHTML = html;
-    saveCampaignState();
-}
-
-function loadPhase() {
-    if (currentTurn >= MAX_TURNS) {
-        runElection();
-        return;
-    }
-    isActionPhase = false;
-    turnExecutiveUsed = false;
-    turnFactionUsed = false;
-
-    for (const key in actionCooldowns) {
-        if (actionCooldowns[key] > 0) actionCooldowns[key]--;
-    }
-
-    // TRIGGER DYNAMIC FACTION CHANGE ON CENTRAL AXIS EVENT (WITH SEAT-WEIGHTED AFFINITY & BANNED GUARD)
-    const ev = events[currentTurn - 1];
-    if (ev && ev.id === 'ev_central_axis' && factions['poros_tengah'] && !bannedFactions['poros_tengah'] && factions['poros_tengah'].seats === 34 && factions['poros_tengah'].transformed) {
-        const panSeats = factions['poros_tengah'].seats;
-        const pppSeats = (factions['ppp'] && !bannedFactions['ppp']) ? factions['ppp'].seats : 0;
-        const pkbSeats = (factions['pkb'] && !bannedFactions['pkb']) ? factions['pkb'].seats : 0;
-        const othTransfer = (factions['other_parties'] && !bannedFactions['other_parties']) ? Math.min(20, factions['other_parties'].seats) : 0;
-        const totalMergedSeats = panSeats + pppSeats + pkbSeats + othTransfer;
-
-        const panAff = factions['poros_tengah'].affinity;
-        const pppAff = factions['ppp'] ? factions['ppp'].affinity : panAff;
-        const pkbAff = factions['pkb'] ? factions['pkb'].affinity : panAff;
-        const othAff = factions['other_parties'] ? factions['other_parties'].affinity : panAff;
-
-        const weightedAffinity = totalMergedSeats > 0
-            ? ((panAff * panSeats) + (pppAff * pppSeats) + (pkbAff * pkbSeats) + (othAff * othTransfer)) / totalMergedSeats
-            : panAff;
-
-        const t = factions['poros_tengah'].transformed;
-        factions['poros_tengah'].name = t.name;
-        factions['poros_tengah'].portraitName = t.portraitName || t.name;
-        factions['poros_tengah'].seats = totalMergedSeats;
-        factions['poros_tengah'].affinity = clampFaction('poros_tengah', weightedAffinity);
-        factions['poros_tengah'].summary = t.summary;
-        factions['poros_tengah'].biography = t.biography;
-        factions['poros_tengah'].moods = t.moods;
-        factions['poros_tengah'].interactions = t.interactions;
-
-        const inheritedFavor = (factions['ppp'] ? (factions['ppp'].favor || 0) : 0) + (factions['pkb'] ? (factions['pkb'].favor || 0) : 0);
-        factions['poros_tengah'].favor = (factions['poros_tengah'].favor || 0) + inheritedFavor;
-
-        if (factions['ppp']) factions['ppp'].seats = 0;
-        const pppIndex = portraitFactions.indexOf('ppp');
-        if (pppIndex > -1) portraitFactions.splice(pppIndex, 1);
-
-        if (factions['pkb']) factions['pkb'].seats = 0;
-        const pkbIndex = portraitFactions.indexOf('pkb');
-        if (pkbIndex > -1) portraitFactions.splice(pkbIndex, 1);
-
-        if (factions['other_parties'] && othTransfer > 0) {
-            factions['other_parties'].seats = Math.max(0, factions['other_parties'].seats - othTransfer);
-        }
-    }
-
-    renderEventMenu();
-    updateUI();
-}
-
-window.resolveEvent = function(optIndex) {
-    const ev = events[currentTurn - 1];
-    if (!ev || window.resolvedEventTurn === currentTurn) return; // already resolved this turn
-    const option = ev.options[optIndex];
-    if (!option) return;
-    window.resolvedEventTurn = currentTurn;
-
-    // Track specific historical choices for achievements
-    if (ev.id === 'ev_bank_bali' && optIndex === 0) bankBaliCleanSteps.frozeEGP = true;
-    if (ev.id === 'ev_imf_ultimatum' && optIndex === 0) bankBaliCleanSteps.pwcAccess = true;
-    if (ev.id === 'ev_imf_ultimatum' && optIndex === 4) bankBaliCleanSteps.defiedIMF = true;
-    if (ev.id === 'ev_pwc_audit' && optIndex === 0) bankBaliCleanSteps.declassifiedPwC = true;
-
-    if (ev.id === 'ev_referendum_countdown' && optIndex === 0) timorPromiseSteps.countdown = true;
-    if (ev.id === 'ev_timor_votes' && optIndex === 0) timorPromiseSteps.votes = true;
-    if (ev.id === 'ev_peacekeeper_decision' && (optIndex === 0 || optIndex === 1)) timorPromiseSteps.peacekeepers = true;
-
-    if (ev.id === 'ev_assembly_convenes' && optIndex === 0) helpedRaisSpeaker = true;
-    if (ev.id === 'ev_suharto_probe' && optIndex === 1 && stats.cendana >= 80) {
-        sp3UpheldWithHighCendana = true;
-    }
-
-    applyEffects(option.effects);
-    updateUI();
-
-    if (currentTurn >= events.length) {
-        showCustomAlert(option.reaction, () => {
-            currentTurn++;
-            runElection();
-        });
-    } else {
-        isActionPhase = true;
-        saveCampaignState();
-        showCustomAlert(option.reaction, showActionMenu);
-    }
-};
-
-// ==========================================================================
-// POST-SPEECH LOCKS, COLOR-CODED WHIP REPORTS & NIGHT OF THE LONG KNIVES
-// ==========================================================================
 
 // Readable text colors paired with FACTION_HISTORICAL_COLORS swatches
 const FACTION_TEXT_COLORS = {
@@ -2639,8 +2096,7 @@ const FACTION_TEXT_COLORS = {
     'abri':            '#3E5022'
 };
 
-// Decrees that alter MPR composition, ban parties, or rewrite constitutional rules
-// cannot be enacted once the MPR has already heard the Accountability Speech.
+// Decrees that change MPR composition, ban parties or rewrite rules are locked after the Accountability Speech
 const POST_SPEECH_LOCKED_DECREES = new Set([
     'abolish_abri_mpr_seats',
     'dissolve_golkar_old_guard',
@@ -2655,9 +2111,11 @@ const POST_SPEECH_LOCKED_DECREES = new Set([
     'cendana_restoration_pact'
 ]);
 
+// Horse-trading fatigue counts and the last ticker message
 window.horseTradeCounts = window.horseTradeCounts || {};
 window.lastHorseTradeTicker = "";
 
+// Turn number of the Accountability Speech
 function getSpeechTurnNumber() {
     if (!events || events.length === 0) return 20;
     const idx = events.findIndex(e => e.id === 'ev_the_speech');
@@ -2676,11 +2134,57 @@ function isNightOfLongKnivesTurn() {
     return Boolean(ev && ev.id === 'ev_eve_of_vote');
 }
 
+// Senayan floor assessment is visible only from the Night of the Long Knives turn until the hide turn
+const SENAYAN_ASSESSMENT_HIDE_TURN = 23;
+
+// Turn number of the Night of the Long Knives
+function getLongKnivesTurnNumber() {
+    if (!events || events.length === 0) return Infinity;
+    const idx = events.findIndex(e => e.id === 'ev_eve_of_vote');
+    return idx >= 0 ? (idx + 1) : events.length;
+}
+
+// Whether the Senayan floor assessment is currently shown
+function isSenayanAssessmentVisible() {
+    return Boolean(gameStarted) &&
+        currentTurn >= getLongKnivesTurnNumber() &&
+        currentTurn < SENAYAN_ASSESSMENT_HIDE_TURN;
+}
+
+// Whether a decree is locked because the MPR has already convened
 function isDecreeLockedBySession(decree) {
     if (!isPastAccountabilitySpeech() || !decree) return false;
     if (Array.isArray(decree.banFactions) && decree.banFactions.length > 0) return true;
     if (decree.seatChanges || decree.seatRecipients) return true;
     return POST_SPEECH_LOCKED_DECREES.has(decree.id);
+}
+
+// Hide a decree until the event named in its unlockEvent field is reached
+function isDecreeEventUnlocked(decree) {
+    if (!decree || !decree.unlockEvent) return true;
+    if (!gameStarted || !events) return false;
+    const idx = events.findIndex(e => e.id === decree.unlockEvent);
+    if (idx < 0) return true;
+    return currentTurn >= (idx + 1);
+}
+
+// Check a decree's faction-loyalty requirements, waiving factions that were banned or merged away
+function getDecreeFactionReqFailures(decree) {
+    const fails = [];
+    if (!decree || !Array.isArray(decree.reqFactions)) return fails;
+    decree.reqFactions.forEach(req => {
+        const f = factions[req.key];
+        if (!f || f.seats <= 0 || bannedFactions[req.key]) return;
+        const op = req.op || '>=';
+        const ok = (op === '<=') ? (f.affinity <= req.val) : (f.affinity >= req.val);
+        if (ok) return;
+        const label = EFFECT_DISPLAY_NAMES[req.key] || req.key;
+        const tier = getMoodData(req.key, req.val).text;
+        fails.push(op === '<='
+            ? `Requires ${label} to fall to '${tier}' or lower.`
+            : `Requires ${label} to reach at least '${tier}'.`);
+    });
+    return fails;
 }
 
 // Renders a color-coded faction pill with its historical party swatch (No leader names in parentheses, no stance text)
@@ -2704,8 +2208,10 @@ window.lobbyDelegatesWithPC = function(factionKey, pcToSpend = 1, returnView = '
     if (!gameStarted || !isActionPhase || !isNightOfLongKnivesTurn()) return;
     if (!factions[factionKey] || bannedFactions[factionKey] || factions[factionKey].seats <= 0) return;
 
-    const spend = Math.max(1, Math.min(Number(pcToSpend) || 1, stats.PC));
-    if (stats.PC < 1) {
+    // The second argument is now the number of overtures (1 or 5); the PC cost comes from getHorseTradeCost().
+    const overtures = (Number(pcToSpend) >= HORSE_TRADE_BLOC_OVERTURES) ? HORSE_TRADE_BLOC_OVERTURES : 1;
+    const cost = getHorseTradeCost(overtures);
+    if (stats.PC < cost) {
         showCustomAlert("Our Political Capital is exhausted. The floor whips have nothing left to trade tonight.", null);
         return;
     }
@@ -2715,24 +2221,20 @@ window.lobbyDelegatesWithPC = function(factionKey, pcToSpend = 1, returnView = '
     }
 
     prevStatsSnapshot = { ...stats };
-    stats.PC = clampPC(stats.PC - spend);
-    logPCChange(-spend, `horse_trade:${factionKey}`);
+    stats.PC = clampPC(stats.PC - cost);
+    logPCChange(-cost, `horse_trade:${factionKey}`);
 
-    const leverage = getFactionLeverage(factionKey);
-    // Ideological/command blocs move slightly slower per 1 PC than transactional delegate blocs
-    let blocSensitivity = 0.85;
-    if (factionKey === 'pdip') blocSensitivity = 0.60;
-    else if (factionKey === 'abri' || factionKey === 'poros_tengah') blocSensitivity = 0.72;
-    else if (factionKey === 'utusan_daerah' || factionKey === 'golkar_habibie' || factionKey === 'other_parties') blocSensitivity = 0.95;
+    const nationalMult = getHorseTradeNationalMult();
+    const stanceMult = getHorseTradeReceptiveness(factionKey, factions[factionKey].affinity).mult;
 
     let totalGain = 0;
     window.horseTradeCounts[factionKey] = window.horseTradeCounts[factionKey] || 0;
 
-    for (let i = 0; i < spend; i++) {
+    for (let i = 0; i < overtures; i++) {
         const priorUses = window.horseTradeCounts[factionKey];
         const fatigue = Math.max(0.45, 1 - (priorUses * 0.025));
         const jitter = 0.9 + (Math.random() * 0.2);
-        totalGain += blocSensitivity * leverage.gainMult * fatigue * jitter;
+        totalGain += HORSE_TRADE_BASE_GAIN * nationalMult * stanceMult * fatigue * jitter;
         window.horseTradeCounts[factionKey]++;
     }
 
@@ -2741,9 +2243,6 @@ window.lobbyDelegatesWithPC = function(factionKey, pcToSpend = 1, returnView = '
     } else {
         factions[factionKey].affinity = clampFaction(factionKey, factions[factionKey].affinity + totalGain);
     }
-
-    const lines = HORSE_TRADE_FLAVOR_LINES[factionKey] || ["Palace floor whips worked the Senayan hotel suites."];
-    const pickedLine = lines[window.horseTradeCounts[factionKey] % lines.length];
 
     lastRenderedPortraitSignature = "";
     saveCampaignState();
@@ -2756,6 +2255,7 @@ window.lobbyDelegatesWithPC = function(factionKey, pcToSpend = 1, returnView = '
     }
 };
 
+// Build the horse-trading desk HTML
 function renderHorseTradingDeskHTML(returnView = 'action') {
     const tickerText = window.lastHorseTradeTicker
         || "[HOTEL MULIA & SENAYAN FLOOR DESK] It is the final night before the ballot boxes open. Dispatch your floor whips from suite to suite to court wavering delegates (1 PC per overture).";
@@ -2769,24 +2269,24 @@ function renderHorseTradingDeskHTML(returnView = 'action') {
         if (!f || f.seats <= 0 || bannedFactions[key]) continue;
 
         const tagHTML = renderColorCodedFactionTag(key);
-        const leverage = getFactionLeverage(key);
+        const recept = getHorseTradeReceptiveness(key, f.affinity);
         const maxed = f.affinity >= 100;
-        const canSpend1 = stats.PC >= 1 && !maxed;
-        const canSpend5 = stats.PC >= 5 && !maxed;
+        const canSpend1 = stats.PC >= HORSE_TRADE_SINGLE_COST && !maxed;
+        const canSpend5 = stats.PC >= HORSE_TRADE_BLOC_COST && !maxed;
 
         html += `<div class="horse-trade-row">
             <div class="horse-trade-info">
                 ${tagHTML}
                 <div style="font-size: 10.5px; color: #444; margin-top: 2px;">
-                    <b>${f.seats} Delegates</b> &bull; Palace Leverage: <font color="${leverage.color}"><b>${leverage.text}</b></font>
+                    <b>${f.seats} Delegates</b> &bull; Stance: <font color="${recept.color}"><b>${recept.text}</b></font>
                 </div>
             </div>
             <div class="horse-trade-actions">
                 <button type="button" class="horse-trade-btn" ${canSpend1 ? '' : 'disabled'} onclick="lobbyDelegatesWithPC('${key}', 1, '${returnView}')">
-                    Court Delegate (1 PC)
+                    A Quiet Word (${HORSE_TRADE_SINGLE_COST} PC)
                 </button>
                 <button type="button" class="horse-trade-btn" ${canSpend5 ? '' : 'disabled'} onclick="lobbyDelegatesWithPC('${key}', 5, '${returnView}')">
-                    Court Bloc (5 PC)
+                    Midnight Dinner (${HORSE_TRADE_BLOC_COST} PC)
                 </button>
             </div>
         </div>`;
@@ -2796,9 +2296,9 @@ function renderHorseTradingDeskHTML(returnView = 'action') {
     return html;
 }
 
-// Reworked Non-Meta, Color-Coded Palace Whip Intelligence Report (Final Turns)
-// Reworked Non-Meta, Color-Coded Palace Whip Intelligence Report (Final Turns — No Stance Text)
+// Color-coded Palace Whip Intelligence Report for the final turns (no stance text)
 function getPreVoteFactionStanceHTML() {
+    if (!isSenayanAssessmentVisible()) return '';
     const backing = [];
     const hedging = [];
     const opposing = [];
@@ -2831,7 +2331,7 @@ function getPreVoteFactionStanceHTML() {
         <div class="music-header">Senayan Floor Assessment</div>
         <div style="padding: 8px 10px; font-size: 12px; line-height: 1.55; background-color: #DFDFDF; box-shadow: var(--bevel-sunken);">
             <div style="margin-bottom: 6px; background-color: #FFFFFF; padding: 5px 8px; box-shadow: var(--bevel-status-well);">
-                As the Assembly prepares to vote, our floor managers assess that ${getVagueWhipProjection()}.
+                As the Assembly prepares to vote, our floor managers assess that ${getVagueWhipProjection()}${window.whipTrendHTML || ''}.
             </div>
 
             <div class="whip-group-block">
@@ -2860,62 +2360,7 @@ function getPreVoteFactionStanceHTML() {
     </div>`;
 }
 
-// Reworked Color-Coded, Non-Meta MPR Caucus Clipboard (Action Phase)
-// Reworked Color-Coded, Non-Meta MPR Caucus Clipboard (Action Phase — No Stance Text)
-function getFloorWhipClipboardHTML() {
-    const favorable = [];
-    const undecided = [];
-    const opposed = [];
-    const indebted = [];
-
-    for (let i = 0; i < portraitFactions.length; i++) {
-        const key = portraitFactions[i];
-        const f = factions[key];
-        if (!f || f.seats <= 0 || bannedFactions[key]) continue;
-
-        const tag = renderColorCodedFactionTag(key);
-        if (f.affinity >= 60) {
-            favorable.push(tag);
-        } else if (f.affinity >= 40) {
-            undecided.push(tag);
-        } else {
-            opposed.push(tag);
-        }
-
-        if (f.favor && f.favor > 0) {
-            indebted.push(tag);
-        }
-    }
-
-    const favStr = favorable.length > 0 ? favorable.join(" ") : `<i style="color:#555;">None</i>`;
-    const undStr = undecided.length > 0 ? undecided.join(" ") : `<i style="color:#555;">None</i>`;
-    const oppStr = opposed.length > 0 ? opposed.join(" ") : `<i style="color:#555;">None</i>`;
-    const debtStr = indebted.length > 0
-        ? indebted.join(" ")
-        : `<i style="color: #666;">No caucuses currently owe the Palace an uncollected political debt</i>`;
-
-    return `<div class="whip-clipboard-box">
-        <div class="music-header">Senayan Floor Whip Report &mdash; Caucus Dispositions</div>
-        <div style="padding: 8px; font-size: 12px; line-height: 1.6; background-color: #DFDFDF; box-shadow: var(--bevel-sunken);">
-            <div class="whip-group-block">
-                <span class="whip-group-title" style="color: #006400;">&#9632; Leaning Toward the Palace:</span>
-                ${favStr}
-            </div>
-            <div class="whip-group-block">
-                <span class="whip-group-title" style="color: #B8860B;">&#9632; Hedging in the Lobbies:</span>
-                ${undStr}
-            </div>
-            <div class="whip-group-block">
-                <span class="whip-group-title" style="color: #8B0000;">&#9632; Leaning Against the Palace:</span>
-                ${oppStr}
-            </div>
-            <div style="border-top: 1px dotted #808080; margin-top: 4px; padding-top: 4px;">
-                <b>Caucuses Bound by Past Concessions:</b> ${debtStr}
-            </div>
-        </div>
-    </div>`;
-}
-
+// Render the current event and its options
 function renderEventMenu() {
     clearTallyInterval();
     scrollMainPanelToTop();
@@ -2923,7 +2368,7 @@ function renderEventMenu() {
     if (!ev) { returnToPreviousView(); return; }
     let html = '<h2>' + ev.title + '</h2>';
     if (ev.image) {
-        html += `<center><img src="${ev.image}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(ev.title)}"></center>`;
+        html += `<center><img src="${ev.image}" class="event-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(ev.title)}"></center>`;
     }
 
     // Strip any meta turn/mechanic references from event descriptions so the narrative stays purely in-universe
@@ -2958,6 +2403,7 @@ function renderEventMenu() {
     saveCampaignState();
 }
 
+// Load the current turn: event phase or MPR session
 function loadPhase() {
     if (currentTurn >= MAX_TURNS) {
         runElection();
@@ -3020,9 +2466,10 @@ function loadPhase() {
     updateUI();
 }
 
+// Apply the chosen option's effects and move on
 window.resolveEvent = function(optIndex) {
     const ev = events[currentTurn - 1];
-    if (!ev || window.resolvedEventTurn === currentTurn) return; // already resolved this turn
+    if (!ev || window.resolvedEventTurn === currentTurn) return;
     const option = ev.options[optIndex];
     if (!option) return;
     window.resolvedEventTurn = currentTurn;
@@ -3057,7 +2504,7 @@ window.resolveEvent = function(optIndex) {
     }
 };
 
-// --- COMPOUNDING MALUS, BONUS & PASSIVE PC LEDGER SYSTEM ---
+// COMPOUNDING MALUS, BONUS & PASSIVE PC LEDGER SYSTEM
 function applyEndOfTurnEconomy() {
     const mods = gameConfig.systemModifiers;
     const diffDef = gameConfig.difficultySettings[selectedDifficulty];
@@ -3183,6 +2630,7 @@ function applyEndOfTurnEconomy() {
     return { pcPenalty: pcPenalty, passivePC: passivePC };
 }
 
+// Preview the malus or bonus that will apply at the end of this turn
 function getCurrentPenaltyPreview() {
     const mods = gameConfig.systemModifiers;
     const govStability = getGovStability();
@@ -3194,6 +2642,7 @@ function getCurrentPenaltyPreview() {
     return Math.floor(projectedMalus * 0.75);
 }
 
+// Build the gazette listing the enacted decrees
 function getStateGazetteHTML() {
     const enactedList = [];
     if (actionsData && Array.isArray(actionsData.decrees)) {
@@ -3217,6 +2666,7 @@ function getStateGazetteHTML() {
     </div>`;
 }
 
+// Render the action phase menu
 window.showActionMenu = function(preserveScroll = false) {
     clearTallyInterval();
     if (!preserveScroll) scrollMainPanelToTop();
@@ -3357,7 +2807,8 @@ window.showActionMenu = function(preserveScroll = false) {
         }
     }
 
-    html += getFloorWhipClipboardHTML();
+    // Senayan floor assessment (returns '' unless it is the Night of the Long Knives); redrawn after every button press
+    html += getPreVoteFactionStanceHTML();
     html += getStateGazetteHTML();
 
     html += '<p style="margin-top: 10px; margin-bottom: 6px; text-align: center;"><font face="MS Sans Serif" size="2" color="#000080"><b>Select a delegate portrait below to initiate negotiations.</b></font></p>';
@@ -3367,12 +2818,14 @@ window.showActionMenu = function(preserveScroll = false) {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// End the action phase and advance the turn
 window.finishActionPhase = function() {
     applyEndOfTurnEconomy();
     updateUI();
     nextTurn();
 };
 
+// Advance the turn automatically when no actions remain
 function checkAutoAdvanceTurn() {
     // Do not auto-advance during the Night of the Long Knives if the player still has PC for horse-trading
     if (isNightOfLongKnivesTurn() && stats.PC > 0) {
@@ -3387,6 +2840,7 @@ function checkAutoAdvanceTurn() {
     }
 }
 
+// Render the routine actions menu
 window.showRoutineActions = function(activeTab = 'Economy') {
     scrollMainPanelToTop();
     if (turnExecutiveUsed) {
@@ -3500,6 +2954,7 @@ window.showRoutineActions = function(activeTab = 'Economy') {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Render the decrees menu
 window.showDecreesMenu = function(activeTab = 'Economy') {
     scrollMainPanelToTop();
     if (turnExecutiveUsed) {
@@ -3537,7 +2992,7 @@ window.showDecreesMenu = function(activeTab = 'Economy') {
             'direct_presidential_amendment', 'suharto_asset_seizure_tribunal',
             'abolish_abri_mpr_seats', 'dissolve_golkar_old_guard',
             'cendana_restoration_pact', 'ban_pdip_subversion',
-            'enforce_asas_tunggal_ban'
+            'enforce_asas_tunggal_ban', 'unify_golkar_slipi', 'rainbow_coalition_accord'
         ],
         'Regional Affairs': [
             'regional_autonomy', 'aceh_special_status_law', 'maluku_irja_division'
@@ -3556,6 +3011,7 @@ window.showDecreesMenu = function(activeTab = 'Economy') {
     if (actionsData && actionsData.decrees) {
         actionsData.decrees.forEach(decree => {
             if (categories[activeTab] && categories[activeTab].includes(decree.id)) {
+                if (!isDecreeEventUnlocked(decree)) return;
                 decreesInTabCount++;
                 const displayCost = computeDecreeCost(decree.baseCost);
                 const isPassed = activeDecrees[decree.id] === true;
@@ -3608,6 +3064,8 @@ window.showDecreesMenu = function(activeTab = 'Economy') {
                         }
                     }
                 });
+
+                getDecreeFactionReqFailures(decree).forEach(r => failReasons.push(r));
 
                 if (Array.isArray(decree.banFactions)) {
                     const allAlreadyBanned = decree.banFactions.every(fk => bannedFactions[fk] || !factions[fk] || factions[fk].seats <= 0);
@@ -3670,6 +3128,7 @@ window.showDecreesMenu = function(activeTab = 'Economy') {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Render a faction's interaction menu
 window.openFactionMenu = function(factionKey, preserveScroll = false) {
     if (!gameStarted) {
         showCustomAlert("Start the game first.", null);
@@ -3689,7 +3148,6 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
     const favorCount = f.favor || 0;
     const leverage = getFactionLeverage(factionKey);
     const pastSpeech = isPastAccountabilitySpeech();
-    const isLongKnives = isNightOfLongKnivesTurn();
 
     let favorDesc = "None banked";
     if (favorCount === 1) favorDesc = "1 past political accommodation (Can be called in during a Final Appeal or held to steady delegates during the roll call)";
@@ -3697,7 +3155,7 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
 
     let html = '<h2>Interact with ' + f.name + '</h2>';
     if (f.coverImage) {
-        html += `<center><img src="${f.coverImage}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(f.name)}"></center>`;
+        html += `<center><img src="${f.coverImage}" class="content-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px;" alt="${escapeAttr(f.name)}"></center>`;
     }
 
     html += '<p><font face="MS Sans Serif" size="2"><b>Delegates Controlled:</b> ' + f.seats + '<br>';
@@ -3706,29 +3164,6 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
     html += '<b>Political Goodwill Owed:</b> <font color="#0000FF">' + favorDesc + '</font></p>';
 
     html += '<div class="faction-summary">' + f.summary + '</div>';
-
-    // Direct 1-PC Horse-Trading Box inside the Faction Menu ONLY during Night of the Long Knives
-    if (isLongKnives) {
-        const maxed = f.affinity >= 100;
-        const can1 = stats.PC >= 1 && !maxed;
-        const can5 = stats.PC >= 5 && !maxed;
-        const tickerMsg = window.lastHorseTradeTicker || "Dispatch floor whips to court wavering delegates in this caucus one by one tonight.";
-
-        html += `<div class="horse-trade-box">
-            <div class="music-header">Night of the Long Knives Horse-Trading &mdash; ${f.short} (${stats.PC} PC Available)</div>
-            <div class="horse-trade-ticker">${tickerMsg}</div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button type="button" style="flex: 1 1 200px; text-align: center; margin-bottom: 0; background-color: #d0e8d0;" ${can1 ? '' : 'disabled'} onclick="lobbyDelegatesWithPC('${factionKey}', 1, 'faction')">
-                    <b>Court Individual Delegate (1 PC)</b><br>
-                    <span style="font-size: 11px; font-weight: normal;">Slightly nudges ${f.short} delegates toward accepting the speech</span>
-                </button>
-                <button type="button" style="flex: 1 1 200px; text-align: center; margin-bottom: 0; background-color: #d0e8d0;" ${can5 ? '' : 'disabled'} onclick="lobbyDelegatesWithPC('${factionKey}', 5, 'faction')">
-                    <b>Court Provincial Delegation (5 PC)</b><br>
-                    <span style="font-size: 11px; font-weight: normal;">Intensive hotel-suite lobbying across 5 delegates</span>
-                </button>
-            </div>
-        </div>`;
-    }
 
     if (turnFactionUsed) {
         html += '<p><font face="MS Sans Serif" size="2" color="#8B0000"><b>[!] You have already completed a formal Parliamentary Engagement this turn.</b></font></p>';
@@ -3847,6 +3282,7 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
     document.getElementById('main-panel').innerHTML = html;
 };
 
+// Pay for and apply a faction interaction
 window.executeFactionAction = function(factionKey, interactionId, finalCost) {
     if (turnFactionUsed) return;
     const isFinalAction = String(interactionId || '').includes('final');
@@ -3915,6 +3351,7 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
     showCustomAlert(alertMsg, checkAutoAdvanceTurn);
 };
 
+// Pay for and enact a decree
 window.executeDecree = function(type) {
     if (turnExecutiveUsed) return;
     const decreeDef = actionsData.decrees ? actionsData.decrees.find(d => d.id === type) : null;
@@ -3924,6 +3361,10 @@ window.executeDecree = function(type) {
         showCustomAlert("The MPR General Session is already underway and delegate credentials are ratified; this decree can no longer be enacted.", null);
         return;
     }
+    if (!isDecreeEventUnlocked(decreeDef) || getDecreeFactionReqFailures(decreeDef).length > 0) {
+        showCustomAlert("The conditions for this decree have not been met.", null);
+        return;
+    }
 
     const actionCost = computeDecreeCost(decreeDef.baseCost);
     if (stats.PC < actionCost) {
@@ -4015,166 +3456,7 @@ window.executeDecree = function(type) {
     showCustomAlert(decreeDef.alertMsg || "Decree enacted.", checkAutoAdvanceTurn);
 };
 
-window.executeAction = function(type) {
-    if (turnExecutiveUsed) return;
-    const actionDef = actionsData.routine ? actionsData.routine.find(a => a.id === type) : null;
-    if (!actionDef) return;
-
-    turnExecutiveUsed = true;
-    const preActionStats = { ...stats };
-    prevStatsSnapshot = preActionStats;
-    const pcPenalty = getCurrentPenaltyPreview();
-    const timesUsed = actionUsageCount[type] || 0;
-    const repeatDecay = gameConfig.systemModifiers.routineRepeatDecay || 0.15;
-    const fatigueFactor = Math.max(0.4, 1 - (timesUsed * repeatDecay));
-    actionUsageCount[type] = timesUsed + 1;
-
-    let alertMsg = actionDef.alertMsg || "";
-
-    if (actionDef.effects) applyEffects(actionDef.effects, false);
-
-    if (actionDef.conditionalEffects) {
-        for (const cond of actionDef.conditionalEffects) {
-            const statVal = preActionStats[cond.condition.stat];
-            let isMatch = false;
-            if (cond.condition.operator === '>=') isMatch = (statVal >= cond.condition.value);
-            else if (cond.condition.operator === '<') isMatch = (statVal < cond.condition.value);
-
-            if (isMatch) {
-                if (cond.effects) applyEffects(cond.effects, false);
-                if (cond.alertMsg) alertMsg = cond.alertMsg;
-                break;
-            }
-        }
-    }
-
-    if (actionDef.dynamicScaling) {
-        const scale = actionDef.dynamicScaling;
-        const offsetVal = preActionStats[scale.scaleFrom] + scale.scaleOffset;
-        const calculatedGain = scale.base + Math.floor(offsetVal / scale.scaleDivisor);
-        const finalGain = Math.max(scale.min, calculatedGain);
-
-        const dynamicEffect = {};
-        dynamicEffect[scale.target] = finalGain;
-        applyEffects(dynamicEffect, false);
-
-        if (actionDef.alertMsgs) {
-            alertMsg = (finalGain > 0) ? actionDef.alertMsgs.success : actionDef.alertMsgs.failure;
-        }
-    }
-
-    if (actionDef.dynamicPC) {
-        const pcGained = Math.max(actionDef.dynamicPC.min, Math.round((actionDef.dynamicPC.base * fatigueFactor) - pcPenalty));
-        const nextPC = clampPC(stats.PC + pcGained);
-        logPCChange(nextPC - stats.PC, 'routine:' + type);
-        stats.PC = nextPC;
-        if (alertMsg.includes("{pcGained}")) {
-            alertMsg = alertMsg.replace("{pcGained}", pcGained);
-        }
-    }
-
-    actionCooldowns[type] = actionDef.cooldown || 2;
-
-    saveCampaignState();
-    updateUI();
-    showCustomAlert(alertMsg, checkAutoAdvanceTurn);
-};
-
-window.executeDecree = function(type) {
-    if (turnExecutiveUsed) return;
-    const decreeDef = actionsData.decrees ? actionsData.decrees.find(d => d.id === type) : null;
-    if (!decreeDef) return;
-
-    const actionCost = computeDecreeCost(decreeDef.baseCost);
-    if (stats.PC < actionCost) {
-        showCustomAlert(`Insufficient Political Capital to enact this decree.`, null);
-        return;
-    }
-
-    stats.PC = clampPC(stats.PC - actionCost);
-    logPCChange(-actionCost, 'decree:' + type);
-    activeDecrees[type] = true;
-    turnExecutiveUsed = true;
-
-    // 1. Handle Faction Bans & Dynamic Seat Redistribution
-    if (Array.isArray(decreeDef.banFactions)) {
-        let totalBannedSeats = 0;
-        decreeDef.banFactions.forEach(fk => {
-            bannedFactions[fk] = true;
-            if (factions[fk] && factions[fk].seats > 0) {
-                totalBannedSeats += factions[fk].seats;
-                factions[fk].seats = 0;
-                factions[fk].favor = 0;
-            }
-        });
-
-        if (decreeDef.seatRecipients && totalBannedSeats > 0) {
-            const recipientKeys = Object.keys(decreeDef.seatRecipients).filter(rk => factions[rk] && !bannedFactions[rk]);
-            let weightTotal = 0;
-            recipientKeys.forEach(rk => { weightTotal += decreeDef.seatRecipients[rk]; });
-
-            let seatsDistributed = 0;
-            recipientKeys.forEach((rk, idx) => {
-                if (idx === recipientKeys.length - 1) {
-                    factions[rk].seats += (totalBannedSeats - seatsDistributed);
-                } else {
-                    const share = Math.round((decreeDef.seatRecipients[rk] / weightTotal) * totalBannedSeats);
-                    factions[rk].seats += share;
-                    seatsDistributed += share;
-                }
-            });
-        }
-    }
-
-    // 2. Apply explicit fixed seatChanges if specified
-    if (decreeDef.seatChanges) {
-        for (const facKey in decreeDef.seatChanges) {
-            if (factions[facKey] && !bannedFactions[facKey]) {
-                factions[facKey].seats = Math.max(0, factions[facKey].seats + decreeDef.seatChanges[facKey]);
-            }
-        }
-    }
-
-    // 3. Apply Locks, Floors, Caps & Penalties
-    const locks = decreeDef.locks;
-    if (locks) {
-        prevStatsSnapshot = { ...stats };
-        if (locks.statPenalties) {
-            applyEffects(locks.statPenalties, false);
-        }
-        if (locks.factionPenalties) {
-            applyEffects(locks.factionPenalties, false);
-        }
-        if (locks.minStats) {
-            for (const stat in locks.minStats) {
-                minStats[stat] = Math.max(minStats[stat] || 0, locks.minStats[stat]);
-                stats[stat] = clampDashboard(stat, Math.max(stats[stat], minStats[stat]));
-            }
-        }
-        if (locks.maxCendana !== undefined) {
-            maxCendana = Math.min(maxCendana, locks.maxCendana);
-            stats.cendana = clampDashboard('cendana', Math.min(stats.cendana, maxCendana));
-        }
-        if (locks.minFactions) {
-            for (const fac in locks.minFactions) {
-                minFactions[fac] = Math.max(minFactions[fac] || 0, locks.minFactions[fac]);
-                if (factions[fac]) {
-                    factions[fac].affinity = clampFaction(fac, Math.max(factions[fac].affinity, minFactions[fac]));
-                }
-            }
-        }
-    }
-
-    if (factions['abri']) {
-        stats.mil = Math.round(factions['abri'].affinity);
-    }
-
-    lastRenderedPortraitSignature = "";
-    saveCampaignState();
-    updateUI();
-    showCustomAlert(decreeDef.alertMsg || "Decree enacted.", checkAutoAdvanceTurn);
-};
-
+// Pay for and apply a routine action
 window.executeAction = function(type) {
     if (turnExecutiveUsed) return;
     const actionDef = actionsData.routine ? actionsData.routine.find(a => a.id === type) : null;
@@ -4240,6 +3522,7 @@ window.executeAction = function(type) {
 };
 
 
+// Advance to the next turn
 function nextTurn() {
     currentTurn++;
     loadPhase();

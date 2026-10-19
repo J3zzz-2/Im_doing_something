@@ -7,9 +7,41 @@
     <link rel="icon" href="photo/icon.png" type="image/png">
     <link rel="stylesheet" type="text/css" href="css/default/styles.css">
     <link rel="stylesheet" type="text/css" href="css/news.css">
+    <link rel="stylesheet" type="text/css" href="css/schemes.css">
+    <link rel="stylesheet" type="text/css" href="css/accessibility.css">
+    <link rel="stylesheet" type="text/css" href="css/effects.css">
+    <script>
+    // Apply the saved window style / color scheme before first paint (prevents a flash of the default look)
+    (function () {
+        try {
+            var s = JSON.parse(localStorage.getItem('habibie_settings') || '{}');
+            var css = { win98: 'css/windows98/styles.css', macos8: 'css/macos8/styles.css' };
+            var w = 'default';
+            if (css[s.windowStyle] || s.windowStyle === 'default') w = s.windowStyle;
+            else if (css[s.currentTheme]) w = s.currentTheme;   // older saves
+            var c = /^[a-z]+$/.test(s.colorScheme || '') ? s.colorScheme : 'standard';
+            document.documentElement.setAttribute('data-wstyle', w);
+            document.documentElement.setAttribute('data-scheme', c);
+            var fx = [];   // Effects: apply the saved CSS effects before first paint
+            var ef = s.effects || {};
+            ['glow', 'flicker', 'curve', 'aberration'].forEach(function (k) { if (ef[k] === true) fx.push(k); });
+            if (fx.length) document.documentElement.setAttribute('data-fx', fx.join(' '));
+            var x = s.extra || {};
+            if (x.leftMode) {   // Accessibility: left-side touch mode
+                document.documentElement.setAttribute('data-left', '1');
+                document.documentElement.style.setProperty('--left-pct', Math.min(95, Math.max(40, parseInt(x.leftWidth, 10) || 70)));
+            }
+            if (css[w]) document.write('<link id="theme-css" rel="stylesheet" href="' + css[w] + '">');
+        } catch (e) {}
+    })();
+    </script>
 </head>
 <body>
 <div id="crt-overlay"></div>
+<div id="fx-bloom" class="fx-layer"></div>
+<div id="fx-static" class="fx-layer"></div>
+<div id="fx-flicker" class="fx-layer"></div>
+<div id="fx-curve" class="fx-layer"></div>
 <div class="container">
     <div id="mobile-status-bar">
         <button type="button" id="msb-toggle" onclick="toggleMobileStatusSheet()" aria-expanded="false" aria-controls="msb-sheet">
@@ -144,18 +176,17 @@
 <div id="win95-loader-overlay" style="display: none;">
     <div class="win95-loader-window">
         <div class="win95-loader-titlebar">
-            <span id="win95-loader-title">BINA_GRAHA_OS.EXE</span>
-            <button type="button" class="win95-close-btn" onclick="skipWin95LoadingScreen()" title="Skip">&#10005;</button>
+            <span id="win95-loader-title">LOADING ASSETS</span>
         </div>
         <div class="win95-loader-body">
             <div class="win95-loader-status-row">
-                <span id="win95-loader-flavor">Initializing Executive Terminal...</span>
+                <span id="win95-loader-flavor">LOADING</span>
                 <span id="win95-loader-pct">0%</span>
             </div>
             <div class="win95-progress-well">
                 <div id="win95-loader-bar-fill" class="win95-progress-chunks"></div>
             </div>
-            <div id="win95-loader-file" class="win95-loader-filepath">C:\BINA_GRAHA\SYSTEM\INIT.DRV</div>
+            <div id="win95-loader-file" class="win95-loader-filepath">LOADING ALL ASSETS AND FILES</div>
         </div>
     </div>
 </div>
@@ -195,7 +226,11 @@
 </div>
 
 <script type="text/javascript" src="js/shell.js"></script>
+<script type="text/javascript" src="js/storage.js"></script>
+<script type="text/javascript" src="js/achievements.js"></script>
+<script type="text/javascript" src="js/mobile.js"></script>
 <script type="text/javascript" src="js/game.js"></script>
+<script type="text/javascript" src="js/library.js"></script>
 <script type="text/javascript" src="js/election.js"></script>
 <script type="text/javascript" src="js/settings.js"></script>
 <script type="text/javascript" src="js/news.js"></script>

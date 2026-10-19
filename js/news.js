@@ -1,23 +1,23 @@
-// ==========================================================================
-// STANDALONE NEWSPAPERS, MINI-BROWSER & TELEX POPUP SYSTEM (news.js)
-// ==========================================================================
+// news.js: newspapers, mini-browser and telex popups, plus the sound effects engine.
 
+// Popup state: pending callback, whether the popup is news, and queued alerts
 let alertCallback = null;
 let currentAlertIsNews = false;
-const alertQueue = []; // alerts requested while another one is open
+const alertQueue = [];
 
+// True while a popup alert is visible
 function isAlertOpen() {
     const overlay = document.getElementById('custom-alert-overlay');
     return Boolean(overlay && overlay.style.display === 'flex');
 }
 
-// --- MOBILE DETECTION HELPER ---
+// MOBILE DETECTION HELPER
 function isMobileDevice() {
     return window.innerWidth <= 820 ||
         (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 }
 
-// --- AMBIENT WEB AUDIO ENGINE (Prevents ducking Spotify/music on mobile) ---
+// AMBIENT WEB AUDIO ENGINE (Prevents ducking Spotify/music on mobile)
 const SFX_PATHS = {
     click: 'audio/sfx/click.wav',
     notification: 'audio/sfx/notification.mp3',
@@ -26,6 +26,7 @@ const SFX_PATHS = {
     blocked: 'audio/sfx/blocked.wav'
 };
 
+// Web Audio context, decoded buffers and fallback audio elements for sound effects
 let sfxAudioCtx = null;
 const sfxBuffers = {};
 const sfxFallbackElements = {};
@@ -37,6 +38,7 @@ if (typeof navigator !== 'undefined' && navigator.audioSession) {
     } catch (e) {}
 }
 
+// Create the shared audio context on first use
 function getOrCreateAudioContext() {
     if (!sfxAudioCtx) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -50,6 +52,7 @@ function getOrCreateAudioContext() {
     return sfxAudioCtx;
 }
 
+// Fetch and decode all sound effect files
 async function preloadSfxBuffers() {
     const ctx = getOrCreateAudioContext();
     for (const [key, path] of Object.entries(SFX_PATHS)) {
@@ -71,8 +74,10 @@ async function preloadSfxBuffers() {
     }
 }
 
+// Preload sound effects on page load
 window.addEventListener('load', preloadSfxBuffers);
 
+// Play a sound effect by key through Web Audio, with an audio element fallback
 function playSfxByKey(key, volumeMultiplier = 1.3) {
     try {
         if (typeof window.isSfxEnabled === 'function' && !window.isSfxEnabled()) return;
@@ -116,22 +121,27 @@ function playSfxByKey(key, volumeMultiplier = 1.3) {
     }
 }
 
+// Play the popup notification sound
 window.playPopupChime = function() {
     playSfxByKey('notification', 1.3);
 };
 
+// Play the achievement sound
 window.playAchievementSfx = function() {
     playSfxByKey('achievement', 1.35);
 };
 
+// Play the sound for continuing past a news popup
 window.playNewsContinueSfx = function() {
     playSfxByKey('news', 1.3);
 };
 
+// Play the blocked-action sound
 window.playBlockedSfx = function() {
     playSfxByKey('blocked', 1.35);
 };
 
+// Play the click sound
 window.playClickSfx = function() {
     // Do not play click sound on mobile devices
     if (isMobileDevice()) return;
@@ -156,7 +166,7 @@ function isBlockedAlertMessage(msg) {
     return /Insufficient Political Capital|Start the game first|Resolve the current crisis|Invalid backup|Please write a brief message/i.test(msg);
 }
 
-// --- 1999 INDONESIAN & FOREIGN PRESS PROFILES ---
+// 1999 INDONESIAN & FOREIGN PRESS PROFILES
 const NEWSPAPER_PROFILES = [
     {
         match: ['TEMPO'],
@@ -300,6 +310,7 @@ const NEWSPAPER_PROFILES = [
     }
 ];
 
+// Pick the newspaper profile that matches a source name
 window.getNewspaperProfile = function(rawSource) {
     const s = (rawSource || '').toUpperCase();
 
@@ -473,6 +484,7 @@ function buildVerticalNewspaperHTML(profile, curDate, headline, bodyText) {
     </div>`;
 }
 
+// Show a popup (telex, news or plain alert), queuing it if one is already open
 window.showCustomAlert = function(msg, callback) {
     if (isAlertOpen()) {
         alertQueue.push({ msg, callback });
@@ -543,6 +555,7 @@ window.showCustomAlert = function(msg, callback) {
     alertCallback = callback;
 };
 
+// Close the popup, run its callback and show the next queued alert
 window.closeCustomAlert = function() {
     if (currentAlertIsNews) {
         window.playNewsContinueSfx();

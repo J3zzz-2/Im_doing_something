@@ -1,11 +1,11 @@
-// ============================================================================
-// WINDOWS 95 SHELL, TASKBAR & LOADING SCREEN MODULE (shell.js)
-// ============================================================================
+// shell.js: Windows 95 shell: loading screen, taskbar and Start menu.
 
+// Loader state: cached loading.json data, the running timer and the function that finishes it
 let loadingDataCache = null;
 let activeLoaderTimer = null;
-let activeLoaderFinish = null; // finishes the running loader (hide overlay, run callback, resolve promise)
+let activeLoaderFinish = null;
 
+// Fallback list of file names shown on the loading screen
 const DEFAULT_LOADING_FILES = [
     "config.json",
     "achievements.json",
@@ -31,6 +31,7 @@ const DEFAULT_LOADING_FILES = [
     "audio/music.json"
 ];
 
+// Fetch and cache data/loading.json, falling back to built-in messages if it fails
 async function ensureLoadingData() {
     if (loadingDataCache) return loadingDataCache;
     try {
@@ -54,6 +55,7 @@ async function ensureLoadingData() {
     };
 }
 
+// Return a shuffled selection of loading messages in the current language
 function getShuffledFlavorMessages(count = 6, data = loadingDataCache) {
     const lang = (typeof currentLang !== 'undefined' && currentLang === 'id') ? 'id' : 'en';
     const msgObj = (data && data.messages) || {};
@@ -68,6 +70,7 @@ function getShuffledFlavorMessages(count = 6, data = loadingDataCache) {
     return copy.slice(0, Math.max(1, Math.min(count, copy.length)));
 }
 
+// Return the loading file list, using id/ paths for Indonesian
 function getActualFileList(data = loadingDataCache) {
     const rawFiles = (data && Array.isArray(data.files) && data.files.length > 0)
         ? data.files
@@ -82,14 +85,14 @@ function getActualFileList(data = loadingDataCache) {
     });
 }
 
-// --- WIN95 SEGMENTED LOADING BAR SEQUENCE ---
+// WIN95 SEGMENTED LOADING BAR SEQUENCE
 window.runWin95LoadingScreen = async function(options = {}) {
     const durationMs = options.duration || 1800;
     const headerTitle = options.title || "Loading Assets";
     const onComplete = typeof options.onComplete === 'function' ? options.onComplete : null;
 
     const loaded = await ensureLoadingData();
-    const dataForThisRun = loaded; // may be the built-in fallback; not cached
+    const dataForThisRun = loaded;
 
     // A loader that is still running must be finished first so its promise/callback are never lost
     if (activeLoaderFinish) activeLoaderFinish();
@@ -130,7 +133,7 @@ window.runWin95LoadingScreen = async function(options = {}) {
         let finished = false;
         let finishTimeout = null;
 
-        // Single exit path: normal completion, skip button, or being superseded by another loader.
+        // Single exit path: normal completion or being superseded by another loader.
         const finish = () => {
             if (finished) return;
             finished = true;
@@ -165,18 +168,7 @@ window.runWin95LoadingScreen = async function(options = {}) {
     });
 };
 
-// Skipping now completes the loader properly (callback runs, promise resolves) instead of leaving
-// initGame() waiting forever on a hidden overlay.
-window.skipWin95LoadingScreen = function() {
-    if (activeLoaderFinish) {
-        activeLoaderFinish();
-    } else {
-        const overlay = document.getElementById('win95-loader-overlay');
-        if (overlay) overlay.style.display = 'none';
-    }
-};
-
-// --- WIN95 TASKBAR & START MENU LOGIC ---
+// WIN95 TASKBAR & START MENU LOGIC
 window.toggleWin95StartMenu = function(evt) {
     if (evt) evt.stopPropagation();
     const menu = document.getElementById('win95-start-menu');
@@ -188,6 +180,7 @@ window.toggleWin95StartMenu = function(evt) {
     btn.classList.toggle('active-depressed', !isOpen);
 };
 
+// Close the Start menu
 window.closeWin95StartMenu = function() {
     const menu = document.getElementById('win95-start-menu');
     const btn = document.getElementById('win95-start-btn');
@@ -195,8 +188,12 @@ window.closeWin95StartMenu = function() {
     if (btn) btn.classList.remove('active-depressed');
 };
 
+// Run a Start menu action, confirming first if it would leave a campaign in progress
 window.runStartMenuAction = function(fnName) {
     closeWin95StartMenu();
+
+    // Leaving the epilogue screen: restore the title state before running the action
+    if (window.epilogueActive && fnName !== 'returnToTitleScreen' && typeof returnToTitleScreen === 'function') returnToTitleScreen();
 
     // Leaving a campaign that is in progress: confirm first (progress is auto-saved, so Continue still works)
     const leavesCampaign = (fnName === 'showDifficultyMenu' || fnName === 'returnToTitleScreen');
@@ -213,6 +210,7 @@ window.runStartMenuAction = function(fnName) {
     updateWin95Taskbar();
 };
 
+// Return the in-game date shown in the taskbar
 function getTaskbarGameDate() {
     if (typeof gameStarted !== 'undefined' && gameStarted && typeof events !== 'undefined' && typeof currentTurn !== 'undefined') {
         if (currentTurn <= events.length && events[currentTurn - 1] && events[currentTurn - 1].date) {
@@ -223,6 +221,7 @@ function getTaskbarGameDate() {
     return 'Jun 1999';
 }
 
+// Refresh the taskbar title, date and time tray, and audio icon
 window.updateWin95Taskbar = function() {
     const statusTextEl = document.getElementById('taskbar-window-title');
     const dateTrayEl = document.getElementById('taskbar-tray-date');
@@ -255,6 +254,7 @@ window.updateWin95Taskbar = function() {
     }
 };
 
+// Close the Start menu when clicking outside it
 document.addEventListener('click', function(e) {
     const menu = document.getElementById('win95-start-menu');
     const btn = document.getElementById('win95-start-btn');
@@ -265,10 +265,12 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Close the Start menu on Escape
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeWin95StartMenu();
 });
 
+// Update the taskbar on page load and every second
 window.addEventListener('load', function() {
     updateWin95Taskbar();
     setInterval(updateWin95Taskbar, 1000);

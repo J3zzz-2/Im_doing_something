@@ -1,26 +1,18 @@
 [
   {
-    "title": "Tanah Airku",
+    "title": "Ibu Sud - Tanah Airku",
     "file": "audio/music/tanah_airku.mp3"
   },
   {
-    "title": "Indonesia Raya (Vocal)",
-    "file": "audio/music/national_anthem.mp3"
-  },
-  {
-    "title": "Bapak Pembangunan Indonesia",
+    "title": "Titiek Puspa - Bapak Pembangunan Indonesia",
     "file": "audio/music/bapak_pembangunan_indonesia.mp3"
   },
   {
-    "title": "Buruh Tani Mahasiswa",
+    "title": "Safi'i Kemamang - Buruh Tani Mahasiswa",
     "file": "audio/music/buruh_tani_mahasiswa.mp3"
   },
   {
-    "title": "Gugur Bunga",
-    "file": "audio/music/gugur_bunga.mp3"
-  },
-  {
-    "title": "Halo Halo Bandung",
+    "title": "Ismail Marzuki - Halo Halo Bandung",
     "file": "audio/music/halo_halo_bandung.mp3"
   },
   {
@@ -28,19 +20,15 @@
     "file": "audio/music/mars_mahasiswa.mp3"
   },
   {
-    "title": "Sorak Sorak Gembira",
+    "title": "Cornel Simanjuntak - Sorak Sorak Gembira",
     "file": "audio/music/sorak_sorak_gembira.mp3"
   },
   {
-    "title": "Tinggalkan Ayah Tinggalkan Ibu",
+    "title": "TNI - Tinggalkan Ayah Tinggalkan Ibu",
     "file": "audio/music/tinggalkan_ayah_tinggalkan_ibu.mp3"
   },
   {
-    "title": "Paradisus Paradoxum",
-    "file": "audio/music/paradisus_paradoxum.mp3"
-  },
-  {
-    "title": "Bangsa Bayar Hutang",
+    "title": "Franky Sahilatua - Bangsa Bayar Hutang",
     "file": "audio/music/bangsa_bayar_hutang.mp3"
   },
   {
@@ -56,7 +44,7 @@
     "file": "audio/music/serdadu.mp3"
   },
   {
-    "title": "Indonesia Raya (Instrumental)",
+    "title": "Wage Rudolf Supratman - Indonesia Raya (Instrumental)",
     "file": "audio/music/national_anthem_instrumental.mp3"
   }
 ]

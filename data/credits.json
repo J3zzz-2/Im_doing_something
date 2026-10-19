@@ -1,7 +1,6 @@
 {
   "main": [
     "<b>Created, Designed, Written &amp; Programmed by</b><br>Meniir",
-    "<b>Coding Assistant (fixing, detecting bugs, optimization)</b><br>Gemini Argon 4, Claude Sonnet 5.5",
     "<hr><b><font color=\"#8B0000\">IN MEMORIAM</font></b><br><div style=\"position: relative; width: 400px; max-width: 100%; height: 200px; margin: 12px auto 6px auto; background-color: #A9A9A9; border: 3px inset #FFFFFF; display: flex; align-items: center; justify-content: center; color: #444444; font-size: 11px; font-weight: bold; overflow: hidden; box-sizing: border-box;\"><span>[ PHOTO: IN MEMORIAM ]</span><img src=\"photo/images/fire.png\" alt=\"[In Memoriam]\" style=\"position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;\" onerror=\"this.style.display='none'\"></div>",
     "<div style=\"text-align: justify;\">In memory of the four unarmed Trisakti University students shot dead with live ammunition inside their own campus gates on May 12, 1998: <b>Elang Mulia Lesmana</b>, <b>Hery Hertanto</b>, <b>Hafidin Royan</b>, and <b>Hendriawan Sie</b>.</div>",
     "<div style=\"text-align: justify;\">In memory of the more than <b>1,190 human beings</b> burned alive, shot, or beaten to death across Jakarta, Surakarta, Medan, and Palembang over three days in May 1998—hundreds of whom, including urban poor and children, were trapped and incinerated inside shopping malls such as <b>Yogya Plaza Klender</b> after the exits were locked and doused with fuel.<br><br>In recognition of the <b>hundreds of ethnic Chinese-Indonesian women and girls</b>—at least 85 to nearly 400 documented by the <i>Tim Relawan untuk Kemanusiaan</i> and the Joint Fact-Finding Team (TGPF)—who were systematically hunted down in their homes, shops, and streets across Glodok, Pluit, Jembatan Lima, and Tanah Abang, gang-raped in front of their families, sexually mutilated with razor blades and broken glass, and thrown into burning buildings. And in memory of <b>Ita Martadinata Haryono</b> (18), a Chinese-Indonesian high school student, survivor, and volunteer counselor who was brutally stabbed to death and had her throat slit in her Jakarta bedroom on October 9, 1998—just days before she was scheduled to fly to New York to testify before the United Nations about the May 1998 gang rapes. Not a single organizer, commander, or perpetrator was ever convicted.</div>",
@@ -11,9 +10,18 @@
     "<div style=\"text-align: justify;\">In memory of the thousands of civilians tortured, raped, and executed during the decade of <i>Daerah Operasi Militer</i> (DOM) in <b>Aceh</b>, the 46 civilians gunned down at the <b>Simpang KKA Massacre</b> in North Aceh (May 3, 1999), and the 57 villagers—including <b>Teungku Bantaqiah</b> and his students—massacred and dumped into mass graves in <b>Beutong Ateuh</b> (July 23, 1999). In memory of the more than <b>1,400 East Timorese civilians</b> slaughtered by military-backed militias in 1999 at the <b>Liqui&ccedil;a Church</b>, the home of <b>Manuel Carrascal&atilde;o</b>, the <b>Suai Church</b>, Maliana, and Dili, alongside murdered journalists <b>Agus Muliawan</b> and <b>Sander Thoenes</b>. And in memory of the thousands of civilians killed and displaced in the communal violence in <b>Ambon/Maluku</b> and <b>Sambas, West Kalimantan</b>.<br><br><center><font color=\"#8B0000\"><b>We Refuse to Forget.</b></font></center></div>"
   ],
   "music": [
-    "<b>Track 1:</b> [Title] by placeholder",
-    "<b>Track 2:</b> [Title] by placeholder",
-    "<b>Track 3:</b> [Title] by placeholder"
+    "<b>Tanah Airku:</b> Composed by Ibu Sud",
+    "<b>Bapak Pembangunan Indonesia:</b> Written and performed by Titiek Puspa",
+    "<b>Buruh Tani (Pembebasan):</b> Composed by Safi'i Kemamang",
+    "<b>Halo, Halo Bandung:</b> Composed by Ismail Marzuki",
+    "<b>Mars Mahasiswa (Totalitas Perjuangan):</b> Traditional / Anonymous (N.N.)",
+    "<b>Sorak-Sorak Bergembira:</b> Composed by Cornel Simanjuntak",
+    "<b>Tinggalkan Ayah Tinggalkan Ibu:</b> Mars Militer TNI (Traditional / N.N.)",
+    "<b>Bangsa Bayar Hutang:</b> Written and performed by Franky Sahilatua",
+    "<b>Bento:</b> Written by Iwan Fals &amp; Naniel Yakin, performed by SWAMI / Iwan Fals",
+    "<b>Pesawat Tempurku:</b> Written and performed by Iwan Fals",
+    "<b>Serdadu:</b> Written and performed by Iwan Fals",
+    "<b>Indonesia Raya (Instrumental):</b> Composed by Wage Rudolf Supratman"
   ],
   "sfx": [
     "<b>Click:</b> Sanedish, <font color='#0000FF'><a href='https://freesound.org/people/Sanedish/sounds/831995/' target='_blank'>https://freesound.org/people/Sanedish/sounds/831995/</a></font>",

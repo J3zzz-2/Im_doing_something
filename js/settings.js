@@ -1,32 +1,95 @@
-// ============================================================================
-// SETTINGS & CUSTOMIZATION MODULE (settings.js)
-// ============================================================================
+// settings.js: Settings menu and customization: effects, accessibility, wallpaper, sound, and data backup.
 
+// Support links
 const SUPPORT_LINKS = {
     kofi: "https://ko-fi.com/meniir/",
     trakteer: "https://trakteer.id/meniir_suss",
-    twitter: "https://x.com/MeniirIII",    
-    protonmail: "meniirs@proton.me"       
+    twitter: "https://x.com/MeniirIII"
 };
 
+// Default values of the extended settings
 window.extraSettings = {
     autoAdvanceTurn: true,
     defaultTallySpeed: 1,
     sfxEnabled: true,
-    desktopBg: 'teal' // 'teal' | 'slate' | 'navy' | 'crimson' | 'custom'
+    desktopBg: 'teal',
+    leftMode: false,
+    leftWidth: 70
 };
 
-// --- SOUND EFFECTS (SFX) ---
-// news.js asks isSfxEnabled() before playing the chime, so no wrapping is needed.
+// SETTINGS > EFFECTS
+function fxSwitchHTML(id, label, desc, on, action, extraHTML) {
+    return `<div class="settings-row">
+        <div class="fx-row">
+            <button type="button" role="switch" aria-checked="${on}" id="fx-sw-${id}" class="fx-switch ${on ? 'is-on' : ''}" onclick="${action}"><span class="fx-knob"></span></button>
+            <label for="fx-sw-${id}" class="fx-text"><b>${label}</b><span class="settings-hint">${desc}</span></label>
+        </div>
+        ${extraHTML || ''}
+    </div>`;
+}
+
+// Build the Effects settings card
+function renderEffectsCard() {
+    const allOn = EFFECTS.every(e => isEffectOn(e.id));
+    let rows = fxSwitchHTML('all', 'All Effects', 'Switch every effect on or off together. You can still change each one below.', allOn, `setAllEffects(${!allOn})`);
+    EFFECTS.forEach(e => {
+        const on = isEffectOn(e.id);
+        const slider = (e.id === 'crt' && on) ? `
+            <div class="settings-sunken-well" style="margin-top: 8px;">
+                <span>Scanline Intensity:</span>
+                <input type="range" id="crt-slider" min="5" max="100" value="${crtIntensity}" oninput="updateCRTIntensity()">
+                <span id="crt-display">${crtIntensity}%</span>
+            </div>` : '';
+        rows += fxSwitchHTML(e.id, e.label, e.desc, on, `setEffect('${e.id}', ${!on})`, slider);
+    });
+    return `<div class="settings-card fx-card">
+        <div class="settings-card-header">Effects</div>
+        <div class="settings-card-body">${rows}
+        </div>
+    </div>`;
+}
+
+// ACCESSIBILITY: LEFT-SIDE TOUCH MODE
+window.applyAccessibility = function() {
+    const root = document.documentElement;
+    const s = window.extraSettings || {};
+    if (s.leftMode) {
+        const w = Math.min(95, Math.max(40, parseInt(s.leftWidth, 10) || 70));
+        root.setAttribute('data-left', '1');
+        root.style.setProperty('--left-pct', w);
+    } else {
+        root.removeAttribute('data-left');
+        root.style.removeProperty('--left-pct');
+    }
+};
+
+// Turn left-side touch mode on or off
+window.setLeftMode = function(on) {
+    window.extraSettings.leftMode = Boolean(on);
+    applyAccessibility();
+    saveExtendedSettings();
+    showSettingsMenu(true);
+};
+
+// Set how much screen width left-side mode may use
+window.setLeftWidth = function(pct) {
+    window.extraSettings.leftWidth = pct;
+    applyAccessibility();
+    saveExtendedSettings();
+    showSettingsMenu(true);
+};
+
+// Sound effects: news.js checks isSfxEnabled() before playing, so no wrapping is needed
 window.isSfxEnabled = function() {
     return !window.extraSettings || window.extraSettings.sfxEnabled !== false;
 };
 
-// --- SAVE & LOAD EXTENDED SETTINGS ---
+// SAVE & LOAD EXTENDED SETTINGS
 function saveExtendedSettings() {
-    saveUserSettings(); // game.js stores everything under one key
+    saveUserSettings();
 }
 
+// Load saved extended settings, migrating the old storage key
 function loadExtendedSettings() {
     // One-time migration from the old separate key
     try {
@@ -43,9 +106,10 @@ function loadExtendedSettings() {
 
     paintDesktopBackground(window.extraSettings.desktopBg);
     window.tallySpeed = window.extraSettings.defaultTallySpeed || 1;
+    applyAccessibility();
 }
 
-// --- DESKTOP BACKGROUND & CUSTOM UPLOAD APPLIERS ---
+// DESKTOP BACKGROUND & CUSTOM UPLOAD APPLIERS
 function paintDesktopBackground(bgKey) {
     const b = document.body;
     if (!b) return;
@@ -59,6 +123,10 @@ function paintDesktopBackground(bgKey) {
         b.style.backgroundColor = '#001B3A';
     } else if (bgKey === 'crimson') {
         b.style.backgroundColor = '#4A1212';
+    } else if (bgKey === 'cherry') {
+        b.style.backgroundColor = '#E48FAE';
+    } else if (bgKey === 'piecrust') {
+        b.style.backgroundColor = '#B07A3A';
     } else if (bgKey === 'custom') {
         b.style.backgroundColor = '#008080';
         try {
@@ -66,18 +134,20 @@ function paintDesktopBackground(bgKey) {
             if (savedBg) {
                 b.style.backgroundImage = `url('${savedBg}')`;
             } else {
-                window.extraSettings.desktopBg = 'teal'; // image is gone; do not claim "custom"
+                window.extraSettings.desktopBg = 'teal';
             }
         } catch (e) { console.warn(e); }
     }
 }
 
+// Choose a desktop wallpaper and save it
 window.applyDesktopBackground = function(bgKey) {
     window.extraSettings.desktopBg = bgKey;
     paintDesktopBackground(bgKey);
     saveExtendedSettings();
 };
 
+// Store an uploaded wallpaper image and apply it
 function storeAndApplyWallpaper(dataUrl) {
     try {
         localStorage.setItem('habibie_custom_bg', dataUrl);
@@ -89,10 +159,11 @@ function storeAndApplyWallpaper(dataUrl) {
     if (document.body) {
         document.body.style.backgroundImage = `url('${dataUrl}')`;
     }
-    saveExtendedSettings(); // writes 'teal' instead of 'custom' if the image could not be stored
+    saveExtendedSettings();
     showSettingsMenu(true);
 }
 
+// Read an uploaded image file as a custom wallpaper
 window.uploadCustomWallpaper = function(inputElem) {
     if (!inputElem || !inputElem.files || !inputElem.files[0]) return;
     const reader = new FileReader();
@@ -121,6 +192,7 @@ window.uploadCustomWallpaper = function(inputElem) {
     reader.readAsDataURL(inputElem.files[0]);
 };
 
+// Delete the custom wallpaper and fall back to the default
 window.clearCustomWallpaper = function() {
     try {
         localStorage.removeItem('habibie_custom_bg');
@@ -129,17 +201,19 @@ window.clearCustomWallpaper = function() {
     showSettingsMenu(true);
 };
 
-// --- SETTINGS CONTROLS HANDLERS ---
+// SETTINGS CONTROLS HANDLERS
 window.toggleAutoAdvanceSetting = function(cb) {
     window.extraSettings.autoAdvanceTurn = cb.checked;
     saveExtendedSettings();
 };
 
+// Enable or disable sound effects
 window.toggleSfxSetting = function(cb) {
     window.extraSettings.sfxEnabled = cb.checked;
     saveExtendedSettings();
 };
 
+// Set the default vote tally speed
 window.setDefaultTallySpeedSetting = function(spd) {
     window.extraSettings.defaultTallySpeed = spd;
     window.tallySpeed = spd;
@@ -147,7 +221,7 @@ window.setDefaultTallySpeedSetting = function(spd) {
     showSettingsMenu(true);
 };
 
-// --- DATA BACKUP & RESET ---
+// DATA BACKUP & RESET
 window.exportAchievementsBackup = function() {
     try {
         const data = JSON.stringify(unlockedAchievements || []);
@@ -163,6 +237,7 @@ window.exportAchievementsBackup = function() {
     } catch (e) { console.warn(e); }
 };
 
+// Import unlocked achievements from a backup file
 window.importAchievementsBackup = function(inputElem) {
     if (!inputElem || !inputElem.files || !inputElem.files[0]) return;
     const reader = new FileReader();
@@ -191,6 +266,7 @@ window.importAchievementsBackup = function(inputElem) {
     reader.readAsText(inputElem.files[0]);
 };
 
+// Confirm, then reset all unlocked achievements
 window.resetAllAchievementsPrompt = function() {
     if (confirm("Are you sure you want to permanently reset all unlocked Achievements?")) {
         unlockedAchievements = [];
@@ -199,66 +275,38 @@ window.resetAllAchievementsPrompt = function() {
     }
 };
 
-// --- PROTON MAIL FEEDBACK DISPATCHER ---
-function buildFeedbackPayload() {
-    const typeEl = document.getElementById('feedback-type-select');
-    const msgEl = document.getElementById('feedback-message-input');
-    const diagEl = document.getElementById('feedback-include-diag');
-
-    const category = typeEl ? typeEl.value : 'General Feedback';
-    const rawMsg = msgEl ? msgEl.value.trim() : '';
-
-    let bodyText = rawMsg || '(Write your feedback or bug report here)';
-    if (diagEl && diagEl.checked) {
-        const turnInfo = (typeof gameStarted !== 'undefined' && gameStarted) ? `Turn ${currentTurn}` : 'Title Screen';
-        const diffInfo = (typeof selectedDifficulty !== 'undefined') ? selectedDifficulty : 'N/A';
-        const langInfo = (typeof currentLang !== 'undefined') ? currentLang : 'en';
-        bodyText += `\n\n---\n[Diagnostic Info: ${turnInfo} | Difficulty: ${diffInfo} | Lang: ${langInfo} | Scale: ${textScale}%]`;
-    }
-
-    const subject = `[Twilight of the Banyan Tree] ${category}`;
-    return { subject, bodyText, isEmpty: !rawMsg };
-}
-
-window.sendFeedbackToProton = function() {
-    const { subject, bodyText, isEmpty } = buildFeedbackPayload();
-    if (isEmpty) {
-        showCustomAlert("Please write a brief message in the feedback box before sending.", null);
-        return;
-    }
-    const mailtoUrl = `mailto:${SUPPORT_LINKS.protonmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-    window.location.href = mailtoUrl;
-};
-
-window.copyFeedbackForProton = function() {
-    const { subject, bodyText } = buildFeedbackPayload();
-    const fullClip = `To: ${SUPPORT_LINKS.protonmail}\nSubject: ${subject}\n\n${bodyText}`;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(fullClip).then(() => {
-            showCustomAlert(`Copied to clipboard! You can paste and send it directly to ${SUPPORT_LINKS.protonmail}.`, null);
-        }).catch(() => {
-            prompt("Copy the address and message below:", fullClip);
-        });
-    } else {
-        prompt("Copy the address and message below:", fullClip);
-    }
-};
-
-// --- INLINE LOGOS (KO-FI, TRAKTEER, X/TWITTER, PROTON MAIL) ---
+// INLINE LOGOS (KO-FI, TRAKTEER, X/TWITTER)
 const SETTINGS_ICONS = {
     kofi: `<svg width="15" height="15" viewBox="0 0 24 24" style="vertical-align: -2px; margin-right: 6px;"><path fill="#FFFFFF" d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 5h-2V5h2v3z"/><path fill="#FF5E5B" d="M11 13.5l-3.3-3.1c-.9-.9-.9-2.3 0-3.2.8-.8 2.2-.8 3 0l.3.3.3-.3c.8-.8 2.2-.8 3 0 .9.9.9 2.3 0 3.2L11 13.5z"/></svg>`,
     trakteer: `<svg width="15" height="15" viewBox="0 0 24 24" style="vertical-align: -2px; margin-right: 6px;"><path fill="#FFFFFF" d="M12 2L14.8 8.5L22 9.3L16.5 14L18.2 21L12 17.3L5.8 21L7.5 14L2 9.3L9.2 8.5L12 2Z"/></svg>`,
     twitter: `<svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align: -2px; margin-right: 6px;"><path fill="#FFFFFF" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
-    proton: `<svg width="15" height="15" viewBox="0 0 24 24" style="vertical-align: -2px; margin-right: 6px;"><path fill="#FFFFFF" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>`
 };
 
-// --- RENDER SETTINGS MENU ---
+// RENDER SETTINGS MENU
 window.showSettingsMenu = function(keepScroll) {
     if (!enterMenuView()) return;
     if (keepScroll !== true && typeof scrollMainPanelToTop === 'function') scrollMainPanelToTop();
 
     let html = '<h2>SETTINGS</h2>';
     html += '<div class="settings-panel-wrap">';
+
+    // 0. ACCESSIBILITY (first, so it is the easiest thing to reach)
+    const leftOn = Boolean(window.extraSettings.leftMode);
+    const leftW = parseInt(window.extraSettings.leftWidth, 10) || 70;
+    html += `<div class="settings-card">
+        <div class="settings-card-header">Accessibility</div>
+        <div class="settings-card-body">
+            <div class="settings-row" ${leftOn ? '' : 'style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;"'}>
+                <button class="${leftOn ? 'is-selected' : ''}" style="width: 100%; max-width: 100%; text-align: left; min-height: 44px; margin: 0 0 6px 0; font-weight: bold;" onclick="setLeftMode(${!leftOn})">Left-Side Touch Mode: ${leftOn ? 'ON' : 'OFF'}</button>
+                <div class="settings-hint">For phones and tablets. Squeezes the whole game, including pop-ups, the loading window and notifications, into the left part of the screen, so every button can be reached when the rest of the screen cannot be used. Tap the button above to switch it on or off. It has no effect with a mouse on a wide window.</div>
+            </div>
+            ${leftOn ? `<div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                <div style="margin-bottom: 6px;">Usable width of the screen:</div>
+                ${[50, 60, 70, 80, 90].map(w => `<button class="settings-pill-btn ${leftW === w ? 'is-selected' : ''}" style="min-height: 40px;" onclick="setLeftWidth(${w})">${w}%</button>`).join('')}
+                <div class="settings-hint">The shaded strip on the right is the part the game no longer uses. Pick the largest width that still sits inside the area your screen responds to.</div>
+            </div>` : ''}
+        </div>
+    </div>`;
 
     // 1. GAMEPLAY & SIMULATION
     const toggleChecked = showOptionEffects ? 'checked' : '';
@@ -316,7 +364,9 @@ window.showSettingsMenu = function(keepScroll) {
         { id: 'teal',    label: 'Win95 Teal',    hex: '#008080' },
         { id: 'slate',   label: 'Slate Gray',    hex: '#2F4F4F' },
         { id: 'navy',    label: 'Midnight Navy', hex: '#001B3A' },
-        { id: 'crimson', label: 'Crimson',       hex: '#4A1212' }
+        { id: 'crimson', label: 'Crimson',       hex: '#4A1212' },
+        { id: 'cherry',  label: 'Cherry Pink',   hex: '#E48FAE' },
+        { id: 'piecrust', label: 'Pie Crust',    hex: '#B07A3A' }
     ];
     bgs.forEach(bg => {
         const isCur = (window.extraSettings.desktopBg === bg.id);
@@ -332,19 +382,22 @@ window.showSettingsMenu = function(keepScroll) {
                     ${window.extraSettings.desktopBg === 'custom' ? `<button class="settings-inline-btn" style="background-color: #ffcccc;" onclick="clearCustomWallpaper()">Clear Custom</button>` : ''}
                 </div>
             </div>
+            <div class="settings-row">
+                <div style="margin-bottom: 5px;">Window Style:</div>
+                ${Object.keys(WINDOW_STYLES).map(id => `<button class="settings-inline-btn ${windowStyle === id ? 'is-selected' : ''}" onclick="setWindowStyle('${id}')">${WINDOW_STYLES[id].label}</button>`).join('')}
+            </div>
             <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                <div style="margin-bottom: 5px;">Themes</div>
-                <button class="settings-inline-btn ${currentTheme === 'default' ? 'is-selected' : ''}" onclick="setTheme('default')">Default Win95</button>
-                <button class="settings-inline-btn ${currentTheme === 'crt' ? 'is-selected' : ''}" onclick="setTheme('crt')">CRT Scanlines</button>
-                ${currentTheme === 'crt' ? `
-                <div class="settings-sunken-well" style="margin-top: 8px;">
-                    <span>Scanline Intensity:</span>
-                    <input type="range" id="crt-slider" min="5" max="100" value="${crtIntensity}" oninput="updateCRTIntensity()">
-                    <span id="crt-display">${crtIntensity}%</span>
-                </div>` : ''}
+                <div style="margin-bottom: 6px;">Color Scheme:</div>
+                ${[['Light', 'light'], ['Dark', 'dark']].map(([title, grp]) => `<div class="settings-hint" style="margin: 8px 0 4px 0;"><b>${title}</b></div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    ${Object.keys(COLOR_SCHEMES).filter(id => COLOR_SCHEMES[id].group === grp).map(id => `<button class="settings-swatch-btn ${colorScheme === id ? 'is-selected' : ''}" ${windowStyle === 'macos8' ? 'disabled' : ''} onclick="setColorScheme('${id}')"><span class="settings-color-dot" style="background-color: ${COLOR_SCHEMES[id].swatch};"></span>${COLOR_SCHEMES[id].label}</button>`).join('')}
+                </div>`).join('')}
+                ${windowStyle === 'macos8' ? `<div class="settings-hint" style="margin-left: 0; margin-top: 6px;">Mac OS 8 keeps its own Platinum gray. Schemes apply to the Windows styles.</div>` : ''}
             </div>
         </div>
     </div>`;
+
+    html += renderEffectsCard();
 
     // Right Column: Audio & Data Management
     const musicChecked = musicEnabled ? 'checked' : '';
@@ -386,68 +439,36 @@ window.showSettingsMenu = function(keepScroll) {
         </div>
     </div>`;
 
-    html += `</div>`; // end .settings-two-col
+    html += `</div>`;
 
-    // 3. COMMUNITY, SUPPORT & PROTON MAIL FEEDBACK
+    // 3. COMMUNITY & SUPPORT
     html += `<div class="settings-card">
-        <div class="settings-card-header">Support &amp; Feedback</div>
+        <div class="settings-card-header">Support</div>
         <div class="settings-card-body">
             <div style="margin-bottom: 12px;">
                 <div class="settings-brand-btn-row">
                     <button class="brand-btn brand-btn-kofi" onclick="window.open('${SUPPORT_LINKS.kofi}', '_blank')">
-                        ${SETTINGS_ICONS.kofi}Buy me a coffee (Ko-fi)
+                        ${SETTINGS_ICONS.kofi}Buy me a coffee
                     </button>
                     <button class="brand-btn brand-btn-trakteer" onclick="window.open('${SUPPORT_LINKS.trakteer}', '_blank')">
                         ${SETTINGS_ICONS.trakteer}Support on Trakteer
                     </button>
                     <button class="brand-btn brand-btn-twitter" onclick="window.open('${SUPPORT_LINKS.twitter}', '_blank')">
-                        ${SETTINGS_ICONS.twitter}Follow on X / Twitter
-                    </button>
-                </div>
-            </div>
-
-            <div class="settings-feedback-box">
-                <div style="color: #000080; margin-bottom: 6px;">
-                    Feedback
-                </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 6px;">
-                    <label style="font-size: 12px;">
-                        Topic:
-                        <select id="feedback-type-select" class="settings-select">
-                            <option value="General Feedback">General Feedback</option>
-                            <option value="Bug Report">Bug Report</option>
-                            <option value="Historical Note / Typo">Historical Note / Typo</option>
-                            <option value="Balance Suggestion">Gameplay Balance Suggestion</option>
-                        </select>
-                    </label>
-                    <label style="font-size: 11px; cursor: pointer;">
-                        <input type="checkbox" id="feedback-include-diag" checked>
-                        Attach current turn &amp; difficulty info
-                    </label>
-                </div>
-                <textarea id="feedback-message-input" class="settings-textarea" rows="3" placeholder="Write message here...."></textarea>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-                    <button class="brand-btn brand-btn-proton" onclick="sendFeedbackToProton()">
-                        ${SETTINGS_ICONS.proton}Send
-                    </button>
-                    <button class="settings-inline-btn" onclick="copyFeedbackForProton()" title="Copies the formatted email and address if you use webmail">
-                        Copy Message
+                        ${SETTINGS_ICONS.twitter}X / Twitter
                     </button>
                 </div>
             </div>
         </div>
     </div>`;
 
-    html += '</div>'; // end .settings-panel-wrap
+    html += '</div>';
 
     html += `<center><button style="width: 250px; margin-top: 6px; background-color: #ff9999; text-align: center;" onclick="returnToPreviousView()">Back</button></center>`;
 
     document.getElementById('main-panel').innerHTML = html;
 };
 
-// --- LOAD SETTINGS EARLY ---
-// Scripts sit at the end of <body>, so the DOM already exists: apply saved theme, wallpaper,
-// text scale and volume immediately instead of waiting for the 'load' event.
+// Apply saved settings immediately at load, since the DOM already exists (scripts sit at the end of body)
 loadUserSettings();
 loadExtendedSettings();
 if (textScale !== 100) applyTextScale(textScale);

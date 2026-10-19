@@ -1,8 +1,6 @@
-// ============================================================================
-// OCTOBER 19–20, 1999 MPR ROLL CALL, HEMICYCLE & TAP MPR No. III/MPR/1999
-// (election.js)
-// ============================================================================
+// election.js: October 19-20, 1999 MPR roll call, hemicycle, TAP MPR No. III/MPR/1999 text and the post-election verdict.
 
+// Stop the running vote-tally animation timer
 function clearTallyInterval() {
     if (window.activeTallyInterval) {
         clearInterval(window.activeTallyInterval);
@@ -10,6 +8,7 @@ function clearTallyInterval() {
     }
 }
 
+// Set the tally animation speed and redraw the speed buttons
 window.setTallySpeed = function(speed) {
     window.tallySpeed = speed;
     const speedBtnsContainer = document.getElementById('speed-controls-container');
@@ -163,6 +162,7 @@ function buildTapMprDocumentHTML(accepted, forVotes, againstVotes, blankVotes) {
     </div>`; 
 }
 
+// Run the MPR roll call: build the chamber, animate the tally and show the verdict
 function runElection() {
     clearTallyInterval();
     window.electionPanelSnapshot = null;
@@ -236,8 +236,7 @@ function runElection() {
     const totalChamberSeats = Math.max(1, grandTotalFor + grandTotalAgainst + grandTotalBlank);
     const hemicycleCoords = generateHemicycleLayout(totalChamberSeats);
 
-    // Assign each faction its contiguous block of seats, then shuffle its seat indices
-    // so that Accept, Reject, and Abstain light up randomly across the bloc each campaign!
+    // Give each faction a contiguous seat block, then shuffle its seat indices so votes light up randomly
     let runningSeatOffset = 0;
     for (let i = 0; i < finalData.length; i++) {
         const pool = [];
@@ -494,7 +493,7 @@ function runElection() {
             const winImg = (gameConfig && gameConfig.victoryImage) ? gameConfig.victoryImage : 'photo/victory.png';
             resHTML += `<center><h1 style="color:#008000; margin-bottom: 5px;">${title} (${grandTotalFor} – ${grandTotalAgainst})</h1></center>
                 <p align="center" style="font-family: MS Sans Serif; font-size: 13px; line-height: 1.5;">${desc}</p>
-                <center><img src="${winImg}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-top: 10px; margin-bottom: 15px;" alt="Victory"></center>`;
+                <center><img src="${winImg}" class="content-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-top: 10px; margin-bottom: 15px;" alt="Victory"></center>`;
         } else {
             if (grandTotalFor >= 318 && grandTotalFor <= 326) {
                 unlockAchievement('deja_vu_322');
@@ -529,7 +528,7 @@ function runElection() {
             const loseImg = (gameConfig && gameConfig.defeatImage) ? gameConfig.defeatImage : 'photo/defeat.png';
             resHTML += `<center><h1 style="color:#FF0000; margin-bottom: 5px;">${title} (${grandTotalFor} – ${grandTotalAgainst})</h1></center>
                 <p align="center" style="font-family: MS Sans Serif; font-size: 13px; line-height: 1.5;">${desc}</p>
-                <center><img src="${loseImg}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-top: 10px; margin-bottom: 15px;" alt="Defeat"></center>`;
+                <center><img src="${loseImg}" class="content-image" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-top: 10px; margin-bottom: 15px;" alt="Defeat"></center>`;
         }
 
         // Append the official English translation of TAP MPR No. III/MPR/1999
@@ -636,9 +635,7 @@ function runElection() {
     }, 120);
 }
 
-// ==========================================================================
 // POST-ELECTION VERDICT & STATE OF THE REPUBLIC DOSSIER
-// ==========================================================================
 function getPostElectionNavHTML(activeView) {
     const isVerdict = activeView === 'verdict';
     const isDossier = activeView === 'dossier';
@@ -647,10 +644,11 @@ function getPostElectionNavHTML(activeView) {
         <button class="${isVerdict ? 'is-selected' : ''}" style="width: 220px; display: inline-block; text-align: center; margin: 4px;" onclick="showPostElectionSection('verdict')">Verdict &amp; Decree</button>
         <button class="${isDossier ? 'is-selected' : ''}" style="width: 230px; display: inline-block; text-align: center; margin: 4px;" onclick="showPostElectionSection('dossier')">State of the Republic</button>
         <br>
-        <button style="width: 250px; display: inline-block; text-align: center; margin-top: 10px; background-color: #d0e8d0;" onclick="returnToTitleScreen()">Return to Title Screen</button>
+        <button style="width: 250px; display: inline-block; text-align: center; margin-top: 10px; background-color: #d0e8d0;" onclick="showEpilogue()">Continue</button>
     </div>`;
 }
 
+// Show the chosen section of the post-election screen
 window.showPostElectionSection = function(section) {
     const container = document.getElementById('election-result-container');
     if (!container || !window.lastElectionSummary) return;
@@ -664,6 +662,544 @@ window.showPostElectionSection = function(section) {
     container.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
+// Seat colors for the State of the Republic image (match the .seat-* classes in styles.css)
+const STATE_SEAT_PALETTE = {
+    'for':     { fill: '#00CC00', light: '#88FF88' },
+    'against': { fill: '#FF2222', light: '#FF9999' },
+    'blank':   { fill: '#AAAAAA', light: '#DDDDDD' }
+};
+
+// Image used as the President's portrait on the State of the Republic card
+function getPresidentPortraitSrc() {
+    return (gameConfig && gameConfig.stateOfRepublicPortrait) || 'photo/habibi.png';
+}
+
+// Short display label for a faction (distinguishes the two Golkar wings)
+function getStateFactionLabel(f) {
+    const col = (typeof FACTION_HISTORICAL_COLORS !== 'undefined') ? FACTION_HISTORICAL_COLORS[f.key] : null;
+    return (col && col.label) || f.short || f.name;
+}
+
+// Seat outcomes from left to right: all FOR seats on the left, blanks in the middle, all AGAINST seats on the right
+function getStateSeatOutcomes(sum) {
+    const total = Math.max(1, sum.totalSeats);
+    const nFor = Math.min(sum.forVotes, total);
+    const nAgainst = Math.min(sum.againstVotes, total - nFor);
+    const nBlank = total - nFor - nAgainst;
+    return [].concat(Array(nFor).fill('for'), Array(nBlank).fill('blank'), Array(nAgainst).fill('against'));
+}
+
+// Every faction with at least one FOR vote, and every faction with at least one AGAINST vote (so splits and defectors show on both sides)
+function getStateFactionVoteLists(sum) {
+    const rows = sum.factionBreakdown.filter(f => f.seats > 0);
+    const build = (kind) => rows
+        .filter(f => (kind === 'for' ? f.forVotes : f.againstVotes) > 0)
+        .map(f => {
+            const mine = kind === 'for' ? f.forVotes : f.againstVotes;
+            const other = kind === 'for' ? f.againstVotes : f.forVotes;
+            return { f, n: mine, minority: mine < other };
+        })
+        .sort((a, b) => b.n - a.n);
+    return { forList: build('for'), againstList: build('against') };
+}
+
+// One faction row of the card, built from the stat-row classes in styles.css
+function buildStateFactionRowHTML(entry, kind) {
+    const { f, n, minority } = entry;
+    const col = (typeof FACTION_HISTORICAL_COLORS !== 'undefined') ? FACTION_HISTORICAL_COLORS[f.key] : null;
+    const tone = kind === 'for' ? 'var(--tone-good)' : 'var(--tone-bad)';
+    return `<div class="stat-row">
+        <span class="stat-label"><span style="display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: middle; background-color: ${col ? col.fill : '#808080'}; box-shadow: var(--bevel-status-well);"></span>${getStateFactionLabel(f)}${minority ? ' <span style="font-weight: normal; font-style: italic; color: var(--win95-text-dim);">(defectors)</span>' : ''}</span>
+        <span class="stat-value" style="color: ${tone};">${n} ${kind} <span style="font-weight: normal; color: var(--win95-text-dim);">of ${f.seats}</span></span>
+    </div>`;
+}
+
+// The shareable State of the Republic card: portrait, verdict, split hemicycle and the factions' votes
+function buildStateCardHTML(sum) {
+    const { forList, againstList } = getStateFactionVoteLists(sum);
+    const total = Math.max(1, sum.totalSeats);
+    const pct = n => (n / total * 100).toFixed(2);
+    const verdictColor = sum.won ? 'var(--tone-good)' : 'var(--tone-bad)';
+    const coords = generateHemicycleLayout(sum.totalSeats);
+    const outcomes = getStateSeatOutcomes(sum);
+
+    let dots = '';
+    coords.forEach((pt, i) => {
+        dots += `<div class="mpr-seat-dot seat-${outcomes[i]}" style="left: ${pt.x.toFixed(2)}%; top: ${pt.y.toFixed(2)}%;"></div>`;
+    });
+
+    const column = (title, kind, list) => `<div>
+        <div class="music-header">${title} (${kind === 'for' ? sum.forVotes : sum.againstVotes})</div>
+        <div class="state-gazette-box">
+            ${list.length > 0 ? list.map(e => buildStateFactionRowHTML(e, kind)).join('') : '<span style="font-size: 11px; font-style: italic; color: var(--win95-text-dim);">No delegates voted this way.</span>'}
+        </div>
+    </div>`;
+
+    return `<div id="state-card" class="tally-box">
+        <div class="music-header">STATE OF THE REPUBLIC</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start;">
+            <div style="flex: 0 0 auto; margin: 0 auto; text-align: center;">
+                <div class="player-portrait-container" style="cursor: default;">
+                    <span style="color: #555;">[ PHOTO:<br>HABIBIE ]</span>
+                    <img src="${escapeAttr(getPresidentPortraitSrc())}" class="portrait-img" alt="[HABIBIE]" onerror="this.style.display='none'">
+                </div>
+                <div style="font-size: 13px; font-weight: bold;">His Excellency</div>
+                <div style="font-size: 13px; font-weight: bold;">Bacharuddin Jusuf Habibie<br><span style="font-size: 11px; font-weight: normal; color: var(--win95-text-dim);">3rd President of the Republic of Indonesia</span></div>
+            </div>
+            <div style="flex: 1 1 320px; min-width: 0;">
+                <div class="faction-summary" style="text-align: center; margin-bottom: 8px; padding: 8px;">
+                    <div style="font-size: 16px; font-weight: bold; color: ${verdictColor};">ACCOUNTABILITY SPEECH ${sum.won ? 'ACCEPTED' : 'REJECTED'}</div>
+                    <div style="font-size: 13px; font-weight: bold; margin-top: 2px;"><span style="color: var(--tone-good);">${sum.forVotes} FOR</span> &middot; <span style="color: var(--tone-bad);">${sum.againstVotes} AGAINST</span> &middot; <span style="color: var(--win95-text-dim);">${sum.blankVotes} BLANK</span></div>
+                </div>
+                <div class="mpr-tug-container">
+                    <div class="mpr-tug-for" style="width: ${pct(sum.forVotes)}%;"></div>
+                    <div class="mpr-tug-blank" style="width: ${pct(sum.blankVotes)}%;"></div>
+                    <div class="mpr-tug-against" style="width: ${pct(sum.againstVotes)}%;"></div>
+                    <div class="mpr-majority-marker" title="Majority Threshold"></div>
+                </div>
+                <div class="mpr-hemicycle-wrap">
+                    ${dots}
+                    <div style="position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%); text-align: center; font-weight: bold; font-size: 20px; line-height: 1.1; white-space: nowrap;">${sum.forVotes} &ndash; ${sum.againstVotes}</div>
+                    <div class="mpr-rostrum">MPR ROSTRUM</div>
+                </div>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 14px;">
+            ${column('VOTED FOR', 'for', forList)}
+            ${column('VOTED AGAINST', 'against', againstList)}
+        </div>
+    </div>
+    <div style="text-align: center; margin-bottom: 14px;">
+        <button style="width: 240px; display: inline-block; text-align: center;" onclick="downloadStateOfRepublicImage()">Download Results</button>
+    </div>`;
+}
+
+// Load an image, resolving to null if it cannot be loaded
+function loadStateImage(src) {
+    return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
+}
+
+// Parse a CSS color (#rgb, #rrggbb or rgb()) into [r, g, b]
+function parseStateColor(c) {
+    const s = String(c || '').trim();
+    if (s[0] === '#') {
+        const h = s.length === 4 ? s.slice(1).split('').map(x => x + x).join('') : s.slice(1, 7);
+        return [parseInt(h.slice(0, 2), 16) || 0, parseInt(h.slice(2, 4), 16) || 0, parseInt(h.slice(4, 6), 16) || 0];
+    }
+    const m = s.match(/\d+(\.\d+)?/g);
+    return m && m.length >= 3 ? [Math.round(m[0]), Math.round(m[1]), Math.round(m[2])] : [0, 0, 0];
+}
+
+// Mix two colors; t is the share of the first color
+function mixStateColor(a, b, t) {
+    const x = parseStateColor(a), y = parseStateColor(b);
+    return 'rgb(' + [0, 1, 2].map(i => Math.round(x[i] * t + y[i] * (1 - t))).join(',') + ')';
+}
+
+// Read the active window style and color scheme from the page so the image matches the chosen theme
+function getStateTheme() {
+    const hasCs = (typeof getComputedStyle === 'function');
+    const cs = hasCs ? getComputedStyle(document.documentElement) : null;
+    const v = (name, fallback) => ((cs && cs.getPropertyValue(name).trim()) || fallback);
+    const wstyle = (document.documentElement && document.documentElement.getAttribute && document.documentElement.getAttribute('data-wstyle')) || 'default';
+    let desktop = '#008080';
+    if (hasCs && document.body) {
+        const bg = getComputedStyle(document.body).backgroundColor;
+        if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') desktop = bg;
+    }
+    const T = {
+        wstyle, desktop,
+        bg: v('--win95-bg', '#C0C0C0'), surface: v('--win95-surface', '#DFDFDF'), white: v('--win95-white', '#FFFFFF'),
+        shadow: v('--win95-shadow', '#808080'), dark: v('--win95-dark', '#000000'), navy: v('--win95-navy', '#000080'),
+        blue: v('--win95-blue-grad', '#1084D0'), well: v('--win95-well', '#F5F5F5'), wellAlt: v('--win95-well-alt', '#E0DFE3'),
+        text: v('--win95-text', '#000000'), dim: v('--win95-text-dim', '#555555'), accent: v('--win95-accent', '#000080'),
+        good: v('--tone-good', '#006400'), bad: v('--tone-bad', '#8B0000')
+    };
+    const hexes = v('--win98-title-inactive', '').match(/#[0-9a-fA-F]{3,8}/g);
+    T.inactive = (hexes && hexes.length >= 2) ? [hexes[0], hexes[1]] : [mixStateColor(T.shadow, '#000000', 0.62), T.bg];
+    return T;
+}
+
+// Draw the State of the Republic card as a 1920x1400 image in the active window style (Windows 95, Windows 98 or Mac OS 8)
+function drawStateOfRepublicCanvas(sum, portraitImg, iconImg) {
+    const S = 2, LW = 960, LH = 700;
+    const canvas = document.createElement('canvas');
+    canvas.width = LW * S;
+    canvas.height = LH * S;
+    const g = canvas.getContext('2d');
+    g.scale(S, S);
+    const T = getStateTheme();
+    const MAC = T.wstyle === 'macos8';
+    const W98 = T.wstyle === 'win98';
+    const FONT = MAC
+        ? '"Charcoal", "Chicago", "Geneva", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif'
+        : '"MS Sans Serif", Tahoma, Geneva, sans-serif';
+    const font = (size, bold, italic) => `${italic ? 'italic ' : ''}${bold ? 'bold ' : ''}${size}px ${FONT}`;
+    const rect = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+    const bevel = (x, y, w, h, layers) => {
+        layers.forEach((l, i) => {
+            rect(x + i, y + i, w - 2 * i, 1, l[0]);
+            rect(x + i, y + i, 1, h - 2 * i, l[0]);
+            rect(x + i, y + h - 1 - i, w - 2 * i, 1, l[1]);
+            rect(x + w - 1 - i, y + i, 1, h - 2 * i, l[1]);
+        });
+    };
+    // Bevel recipes copied from --bevel-* in styles.css (Win95), the Windows 98 layer and the Mac OS 8 layer
+    const STYLE = MAC ? {
+        raised: { outline: '#000000', layers: [['#FFFFFF', '#888888'], ['#F0F0F0', '#BBBBBB']] },
+        sunken: { outline: '#555555', layers: [['#777777', '#FFFFFF']] },
+        status: { outline: null, layers: [['#888888', '#FFFFFF']] },
+        window: { outline: '#000000', layers: [['#FFFFFF', '#888888']] }
+    } : {
+        raised: { outline: null, layers: [[T.white, T.dark], [T.surface, T.shadow]] },
+        sunken: { outline: null, layers: [[T.shadow, T.white], [T.dark, T.surface]] },
+        status: { outline: null, layers: [[T.shadow, T.white]] },
+        window: { outline: null, layers: W98 ? [[T.surface, '#0A0A0A'], [T.white, T.shadow]] : [[T.surface, T.dark], [T.white, T.shadow]] }
+    };
+    const panel = (x, y, w, h, fill, kind) => {
+        const st = STYLE[kind];
+        if (st.outline) rect(x - 1, y - 1, w + 2, h + 2, st.outline);
+        rect(x, y, w, h, fill);
+        bevel(x, y, w, h, st.layers);
+    };
+    const text = (str, x, y, size, bold, color, align, italic) => {
+        g.font = font(size, bold, italic);
+        g.textAlign = align || 'left';
+        g.fillStyle = color;
+        g.fillText(str, x, y);
+    };
+    const gradient = (x, w, c1, c2) => {
+        const grad = g.createLinearGradient(x, 0, x + w, 0);
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+        return grad;
+    };
+
+    // Secondary caption bar (the card and list headers): active in Win95, grey "inactive" in Win98 and Mac OS 8
+    const header = (x, y, w, label) => {
+        if (MAC) {
+            rect(x, y, w, 18, '#DDDDDD');
+            rect(x, y + 17, w, 1, '#888888');
+            text(label, x + w / 2, y + 12, 11, true, '#6E6E6E', 'center');
+        } else if (W98) {
+            rect(x, y, w, 18, gradient(x, w, T.inactive[0], T.inactive[1]));
+            text(label, x + 6, y + 12, 11, true, '#F4F1EA');
+        } else {
+            rect(x, y, w, 18, gradient(x, w, T.navy, T.blue));
+            text(label, x + 7, y + 13, 11, true, '#000000');
+            text(label, x + 6, y + 12, 11, true, '#FFFFFF');
+        }
+    };
+
+    // Desktop and main window
+    rect(0, 0, LW, LH, T.desktop);
+    if (MAC) {
+        rect(12, 12, 942, 682, 'rgba(0,0,0,0.55)');
+    } else if (!W98) {
+        rect(14, 14, 940, 680, 'rgba(0,0,0,0.45)');
+    }
+    panel(10, 10, 940, 680, T.bg, 'window');
+
+    // Main window title bar, with its own close controls (the only close marks in the image)
+    if (MAC) {
+        for (let y = 16; y < 36; y++) rect(16, y, 928, 1, (y - 16) % 2 === 0 ? '#FFFFFF' : '#B9B9B9');
+        rect(16, 36, 928, 1, '#000000');
+        g.font = font(12, true);
+        const capW = g.measureText('Twilight of the Banyan Tree').width + 16;
+        rect(480 - capW / 2, 19, capW, 14, '#DDDDDD');
+        text('Twilight of the Banyan Tree', 480, 30, 12, true, '#000000', 'center');
+        const box = (bx) => {
+            rect(bx, 19, 13, 13, '#000000');
+            rect(bx + 1, 20, 11, 11, '#DDDDDD');
+            rect(bx + 1, 20, 11, 1, '#FFFFFF');
+            rect(bx + 1, 20, 1, 11, '#FFFFFF');
+            rect(bx + 11, 20, 1, 11, '#888888');
+            rect(bx + 1, 30, 11, 1, '#888888');
+        };
+        box(24);
+        box(907);
+        rect(911, 23, 5, 5, '#000000');
+        rect(912, 24, 3, 3, '#DDDDDD');
+        box(923);
+        rect(926, 25, 8, 1, '#000000');
+    } else if (W98) {
+        rect(16, 17, 928, 18, gradient(16, 928, T.navy, T.blue));
+        if (iconImg) g.drawImage(iconImg, 19, 18, 16, 16);
+        text('Twilight of the Banyan Tree', 40, 30, 12, true, '#FFFFFF');
+        const btn = (bx) => panel(bx, 19, 16, 14, T.bg, 'raised');
+        btn(886); btn(902); btn(920);
+        rect(890, 28, 6, 2, '#000000');
+        rect(906.5, 22.5, 8, 8, 'rgba(0,0,0,0)');
+        g.strokeStyle = '#000000';
+        g.lineWidth = 1;
+        g.strokeRect(906.5, 22.5, 7, 7);
+        rect(906, 22, 8, 2, '#000000');
+        g.lineWidth = 1.7;
+        g.beginPath();
+        g.moveTo(924, 23); g.lineTo(931, 30);
+        g.moveTo(931, 23); g.lineTo(924, 30);
+        g.stroke();
+    } else {
+        rect(16, 16, 928, 22, gradient(16, 928, T.navy, T.blue));
+        text('Twilight of the Banyan Tree', 25, 32, 12, true, '#000000');
+        text('Twilight of the Banyan Tree', 24, 31, 12, true, '#FFFFFF');
+        panel(924, 19, 16, 14, T.bg, 'raised');
+        text('\u2715', 932, 30, 10, true, T.text, 'center');
+    }
+
+    // Card
+    panel(22, 46, 916, 632, T.bg, 'raised');
+    header(34, 58, 892, 'STATE OF THE REPUBLIC');
+
+    // Portrait
+    rect(39, 88, 160, 200, '#A9A9A9');
+    g.save();
+    g.beginPath();
+    g.rect(43, 92, 152, 192);
+    g.clip();
+    if (portraitImg) {
+        const s = Math.max(152 / portraitImg.width, 192 / portraitImg.height);
+        const dw = portraitImg.width * s, dh = portraitImg.height * s;
+        g.drawImage(portraitImg, 43 + (152 - dw) / 2, 92 + (192 - dh) / 2, dw, dh);
+    } else {
+        text('[ PHOTO:', 119, 186, 10, false, '#555555', 'center');
+        text('HABIBIE ]', 119, 200, 10, false, '#555555', 'center');
+    }
+    g.restore();
+    rect(39, 88, 160, 4, '#808080');
+    rect(39, 88, 4, 200, '#808080');
+    rect(39, 284, 160, 4, '#FFFFFF');
+    rect(195, 88, 4, 200, '#FFFFFF');
+    text('His Excellency', 119, 306, 12, true, T.text, 'center');
+    text('Bacharuddin Jusuf Habibie', 119, 321, 12, true, T.text, 'center');
+    text('3rd President of the', 119, 335, 9.5, false, T.dim, 'center');
+    text('Republic of Indonesia', 119, 347, 9.5, false, T.dim, 'center');
+
+    // Verdict
+    const RX = 218, RW = 708;
+    panel(RX, 88, RW, 66, T.well, 'sunken');
+    text('ACCOUNTABILITY SPEECH ' + (sum.won ? 'ACCEPTED' : 'REJECTED'), RX + RW / 2, 111, 17, true, sum.won ? T.good : T.bad, 'center');
+    const segs = [[`${sum.forVotes} FOR`, T.good], [`${sum.againstVotes} AGAINST`, T.bad], [`${sum.blankVotes} BLANK`, T.dim]];
+    g.font = font(12, true);
+    const sep = '  \u00B7  ';
+    const widths = segs.map(s => g.measureText(s[0]).width);
+    const sepW = g.measureText(sep).width;
+    let cx = RX + RW / 2 - (widths.reduce((a, b) => a + b, 0) + sepW * (segs.length - 1)) / 2;
+    segs.forEach((s, i) => {
+        text(s[0], cx, 129, 12, true, s[1]);
+        cx += widths[i];
+        if (i < segs.length - 1) { text(sep, cx, 129, 12, true, T.text); cx += sepW; }
+    });
+    const diff = (gameConfig && gameConfig.difficultySettings && gameConfig.difficultySettings[selectedDifficulty] && gameConfig.difficultySettings[selectedDifficulty].name)
+        ? gameConfig.difficultySettings[selectedDifficulty].name : String(selectedDifficulty).toUpperCase();
+    text(`Difficulty: ${diff}  \u00B7  Final PC reserve: ${stats.PC}`, RX + RW / 2, 145, 9.5, false, T.dim, 'center');
+
+    // Tug bar
+    const total = Math.max(1, sum.totalSeats);
+    panel(RX, 162, RW, 26, T.shadow, 'sunken');
+    const bx = RX + 2, bw = RW - 4, by = 164, bh = 22;
+    const stripes = (x, w, c1, c2) => {
+        for (let p = 0; p < w; p += 10) {
+            rect(x + p, by, Math.min(8, w - p), bh, c1);
+            if (w - p > 8) rect(x + p + 8, by, Math.min(2, w - p - 8), bh, c2);
+        }
+    };
+    const wFor = bw * sum.forVotes / total, wBlank = bw * sum.blankVotes / total, wAgainst = bw * sum.againstVotes / total;
+    stripes(bx, wFor, '#008000', '#006400');
+    rect(bx + wFor, by, wBlank, bh, '#A9A9A9');
+    stripes(bx + bw - wAgainst, wAgainst, '#CC0000', '#8B0000');
+    rect(bx + bw * 0.5014 - 1, by, 2, bh, '#FFFF00');
+
+    // Hemicycle: FOR seats on the left, AGAINST seats on the right
+    const HX = RX, HY = 196, HW = 450, HH = 212;
+    panel(HX, HY, HW, HH, T.wellAlt, 'sunken');
+    const coords = generateHemicycleLayout(sum.totalSeats);
+    const outcomes = getStateSeatOutcomes(sum);
+    coords.forEach((pt, i) => {
+        const pal = STATE_SEAT_PALETTE[outcomes[i]];
+        const sx = Math.round(HX + pt.x / 100 * HW - 3), sy = Math.round(HY + pt.y / 100 * HH - 3);
+        rect(sx, sy, 6, 6, pal.fill);
+        rect(sx, sy, 6, 1, pal.light);
+        rect(sx, sy, 1, 6, pal.light);
+        rect(sx, sy + 5, 6, 1, '#222222');
+        rect(sx + 5, sy, 1, 6, '#222222');
+    });
+    text(`${sum.forVotes} \u2013 ${sum.againstVotes}`, HX + HW / 2, HY + HH - 36, 22, true, T.text, 'center');
+    panel(HX + HW / 2 - 42, HY + HH - 24, 84, 16, T.bg, 'raised');
+    text('MPR ROSTRUM', HX + HW / 2, HY + HH - 12, 8.5, true, MAC ? T.navy : T.accent, 'center');
+
+    // Totals
+    [['FOR', sum.forVotes, 'for', T.good], ['AGAINST', sum.againstVotes, 'against', T.bad], ['BLANK', sum.blankVotes, 'blank', T.dim]].forEach((t, i) => {
+        const y = HY + i * 72;
+        panel(HX + HW + 14, y, RW - HW - 14, 64, T.well, 'sunken');
+        rect(HX + HW + 18, y + 4, 6, 56, STATE_SEAT_PALETTE[t[2]].fill);
+        text(String(t[1]), HX + HW + 36, y + 36, 28, true, t[3]);
+        text(t[0], HX + HW + 36, y + 54, 12, true, T.text);
+    });
+
+    // Faction lists: every faction with at least one vote on that side, defectors included
+    const { forList, againstList } = getStateFactionVoteLists(sum);
+    const drawList = (x, title, kind, list, count) => {
+        const w = 436, y = 420, boxY = y + 22, boxH = 228;
+        header(x, y, w, `${title} (${count})`);
+        panel(x, boxY, w, boxH, T.surface, 'sunken');
+        if (list.length === 0) {
+            text('No delegates voted this way.', x + 12, boxY + 24, 11, false, T.dim, 'left', true);
+            return;
+        }
+        const rowH = Math.min(21, (boxH - 16) / list.length);
+        const tone = kind === 'for' ? T.good : T.bad;
+        list.forEach((e, i) => {
+            const ry = boxY + 8 + i * rowH;
+            const h = rowH - 3;
+            const f = e.f;
+            const col = (typeof FACTION_HISTORICAL_COLORS !== 'undefined') ? FACTION_HISTORICAL_COLORS[f.key] : null;
+            panel(x + 8, ry, w - 16, h, T.surface, 'status');
+            const my = ry + h / 2;
+            rect(x + 14, my - 5, 10, 10, col ? col.fill : '#808080');
+            bevel(x + 14, my - 5, 10, 10, STYLE.status.layers);
+            const label = getStateFactionLabel(f);
+            text(label, x + 30, my + 4, 11, true, T.text);
+            if (e.minority) {
+                g.font = font(11, true);
+                text('(defectors)', x + 30 + g.measureText(label + ' ').width, my + 4, 10, false, T.dim, 'left', true);
+            }
+            const ofTxt = ` of ${f.seats}`;
+            text(ofTxt, x + w - 14, my + 4, 11, false, T.dim, 'right');
+            g.font = font(11, false);
+            const ofW = g.measureText(ofTxt).width;
+            text(`${e.n} ${kind}`, x + w - 14 - ofW, my + 4, 11, true, tone, 'right');
+        });
+    };
+    drawList(34, 'VOTED FOR', 'for', forList, sum.forVotes);
+    drawList(490, 'VOTED AGAINST', 'against', againstList, sum.againstVotes);
+
+    return canvas;
+}
+
+// Convert a canvas to a PNG blob
+function stateCanvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+        try {
+            canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Empty image'))), 'image/png');
+        } catch (e) { reject(e); }
+    });
+}
+
+// Render the card to a PNG, falling back to a placeholder portrait if the browser blocks the image
+async function makeStateOfRepublicBlob() {
+    const sum = window.lastElectionSummary;
+    if (!sum) return null;
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) { console.warn(e); } }
+    const portraitImg = await loadStateImage(getPresidentPortraitSrc());
+    const iconImg = (document.documentElement.getAttribute('data-wstyle') === 'win98') ? await loadStateImage('photo/icon.png') : null;
+    try {
+        return await stateCanvasToBlob(drawStateOfRepublicCanvas(sum, portraitImg, iconImg));
+    } catch (e) {
+        console.warn('Images could not be embedded:', e);
+        return await stateCanvasToBlob(drawStateOfRepublicCanvas(sum, null, null));
+    }
+}
+
+// Save the State of the Republic card as an HD PNG download
+window.downloadStateOfRepublicImage = async function() {
+    try {
+        const blob = await makeStateOfRepublicBlob();
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'state-of-the-republic-1999.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (e) {
+        console.warn(e);
+        showCustomAlert('The image could not be created in this browser.', null);
+    }
+};
+
+// Epilogue: image id, caption, heading and text (images are optional: photo/epilogue_<id>.png)
+const EPILOGUE_SECTIONS = [
+    {
+        id: 'end',
+        caption: 'Epilogue',
+        title: '',
+        text: 'In the history that actually happened, the People’s Consultative Assembly voted 355 to 322 shortly after midnight on October 20, 1999, with nine abstentions and four spoiled ballots, to reject B.J. Habibie’s accountability speech. He withdrew from the presidential race the same day. Hours later, Abdurrahman Wahid, the nearly blind Nahdlatul Ulama cleric everyone called Gus Dur, defeated Megawati Sukarnoputri 373 to 313 in the first contested presidential vote in the republic’s history. Megawati, whose party had won the most seats in June, was elected vice president the following day, after her supporters had spent a night angry in the streets. Whatever happened in your version of that hall, the larger fact is the same. A seventeen month caretaker presidency ended in a vote, counted on green slips of paper, and not by a decree, a coup, or a crowd storming the gates.<br><br>To see how far that was from where the country had been, it helps to remember the numbers. The rupiah had traded at roughly 2,400 to the dollar in mid-1997. By June 1998 it was near 17,000. Real GDP fell by about 13 percent in 1998, a collapse the IMF itself later described as possibly the largest single-year fall of any country in modern economic history. Inflation approached 80 percent. Suharto had signed his second letter of intent with the Fund on January 15, 1998, while Michel Camdessus stood watching with folded arms. The closure of sixteen banks in November 1997 had been meant to restore confidence and instead set off a run. Then came the Trisakti shootings on May 12, 1998, the riots of May 13 to 15 in which well over a thousand people died, many in burning shopping malls, and the sexual violence against ethnic Chinese women documented by the Joint Fact-Finding Team. On May 21, Suharto resigned after thirty-two years, nine days after students had occupied the parliament building.<br><br>The government recapitalized the banking system at a cost of about Rp 658 trillion, equal to more than half of a year’s GDP, and public debt rose from roughly 24 percent of GDP before the crisis to about 93 percent. The Indonesian Bank Restructuring Agency, created in January 1998, spent six years selling off seized assets and chasing the owners of banks that had looted their own depositors, with mixed success, before it was dissolved in 2004. Four state banks were merged into Bank Mandiri in 1999. The IMF programs themselves ran from 1997 to the end of 2003, and Indonesia drew about SDR 7.4 billion, around $11.1 billion. The government of Susilo Bambang Yudhoyono, who had won the presidency in 2004, decided not to extend the arrangement. It paid $3.75 billion in June 2006, then announced on October 5 that it would settle the remaining SDR 2.2 billion, about $3.2 billion, and the payment cleared that month. The original schedule had run to December 2010. A commodity boom, a current account surplus, and tighter budgets made it possible. In January 2007 Jakarta also asked for the Consultative Group on Indonesia, the donor forum that had met under World Bank leadership since 1967, to be disbanded. Its own Independent Evaluation Office reviewed the episode in 2003, and critics such as Joseph Stiglitz argued that the early bank closures and tight money deepened the panic. What no one disputes is that Indonesia came out of the decade owing the IMF nothing and growing at around 5 to 6 percent a year.<br><br>Between 1999 and 2002 the MPR amended the 1945 Constitution four times. It limited presidents to two terms, moved to direct presidential elections, created the Constitutional Court, and ended the military’s appointed seats in the legislatures by 2004. Regional autonomy took effect on January 1, 2001, and from 2005 governors, mayors, and regents were elected directly. The Press Law of September 1999 abolished the licensing regime that had let information ministers shut newspapers, and Tempo, Detik, and Editor, banned in 1994, were back on the stands. The Corruption Eradication Commission, the KPK, was founded in 2002 and spent its first decade jailing ministers, governors, and a police general, which no one in the Suharto era would have thought possible.<br><br>Habibie had offered East Timor a choice in January 1999, and on August 30, 78.5 percent voted against autonomy within Indonesia. Militias backed by elements of the army burned Dili and drove hundreds of thousands from their homes before the Australian-led INTERFET force under Major General Peter Cosgrove landed on September 20. The Assembly formally accepted the result in October, and Timor-Leste became independent on May 20, 2002.<br><br>Aceh took longer. After the tsunami of December 26, 2004 killed roughly 170,000 people in the province, the Finnish mediator Martti Ahtisaari helped broker the Helsinki memorandum between Jakarta and the Free Aceh Movement, signed on August 15, 2005. The Malino agreements had already calmed the communal killing in Poso and Ambon, though the Bali bombings of October 12, 2002, which killed 202 people, showed that new dangers had arrived alongside the old ones. No senior officer was convicted for May 1998, the disappearance of activists such as Wiji Thukul remained unresolved, and Suharto died on January 27, 2008 without ever standing trial.<br><br>Habibie lived to see much of it. He founded The Habibie Center in 1999 to promote democracy and technology, and he died on September 11, 2019, at 83. In the years between, Yudhoyono won a second term in 2009, and in 2014 Joko Widodo, a furniture seller from Solo with no ties to the old elite, won the presidency.<br><br>But the reform era was never a straight line. In September 2019, weeks before Habibie’s death, parliament revised the KPK law in a way that most observers believed weakened it, and students returned to the streets. Prabowo Subianto, a former special forces commander and Suharto’s former son-in-law, whose dismissal from the army in 1998 was part of the story you have just played, won the presidency in February 2024 and was inaugurated on October 20, 2024, twenty-five years to the day after Wahid. In March 2025 parliament unanimously passed a revision of the armed forces law that widened the list of civilian posts open to active-duty officers, and in August 2025 protests spread to more than a hundred cities after the killing of Affan Kurniawan, a 21-year-old ride-hailing driver, under a police armored vehicle. Human Rights Watch’s 2026 report counted the growing role of military officers in civilian affairs among the year’s chief concerns. Against that, hundreds of thousands of mostly young people took to the streets and the press kept reporting, which is a different picture from 1997.'
+    }
+];
+
+// Epilogue image block: shows a placeholder until the real image exists
+function buildEpilogueImageHTML(sec) {
+    const src = (gameConfig && gameConfig.epilogueImages && gameConfig.epilogueImages[sec.id]) || `photo/epilogue/epilogue_${sec.id}.png`;
+    const cap = escapeAttr(sec.caption);
+    return `<center><div style="position: relative; width: 100%; max-width: 880px; aspect-ratio: 2 / 1; max-height: 440px; box-sizing: border-box; border: 3px inset #FFFFFF; background-color: #A9A9A9; margin-bottom: 15px; overflow: hidden;">
+        <span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; color: #555; padding: 6px;">[ PHOTO:<br>${cap} ]</span>
+        <img src="${escapeAttr(src)}" alt="${cap}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
+    </div></center>`;
+}
+
+// Show the epilogue: replaces the whole game window with a Situation-style panel
+window.showEpilogue = function() {
+    const sum = window.lastElectionSummary;
+    const mainPanel = document.getElementById('main-panel');
+    const leftPanel = document.getElementById('left-panel');
+    const mprDashboard = document.getElementById('mpr-dashboard');
+    if (!mainPanel) return;
+
+    if (mainPanel.querySelector('#election-result-container')) window.electionPanelSnapshot = mainPanel.innerHTML;
+    window.epilogueActive = true;
+    if (leftPanel) leftPanel.style.display = 'none';
+    if (mprDashboard) mprDashboard.style.display = 'none';
+    mainPanel.style.width = '100%';
+    if (typeof updateMobileStatusBar === 'function') updateMobileStatusBar();
+
+    const won = Boolean(sum && sum.won);
+    const intro = won
+        ? 'The Assembly accepted your <i>Pidato Pertanggungjawaban</i>. A president had stood before the MPR and been held to account, and the answer came in a vote, not by decree or by force.'
+        : 'The Assembly did not accept your <i>Pidato Pertanggungjawaban</i>. It stung, but the verdict was delivered by vote in a hall of seven hundred delegates, and power passed the way it should in a republic: peacefully, under the rules.';
+
+    let html = '<center><h2>EPILOGUE</h2></center>';
+    const bodyStyle = 'padding: 15px; margin-bottom: 10px; font-family: MS Sans Serif, sans-serif; font-size: 13px; line-height: 1.6; color: #333; text-align: justify;';
+
+    html += `<div style="${bodyStyle}"><b>Dear Mr. President,</b><br><br>${intro} You inherited a nation on the edge. You leave it with a free press, free parties and a ballot box that works. What follows is not your doing alone, but it could not have begun without the doors you opened.</div>`;
+
+    EPILOGUE_SECTIONS.forEach(sec => {
+        html += buildEpilogueImageHTML(sec);
+        html += `<center><h3 style="margin: 0 0 4px 0;">${sec.title}</h3></center>`;
+        html += `<div style="${bodyStyle}">${sec.text}</div>`;
+    });
+
+    html += `<div style="${bodyStyle} text-align: center; font-style: italic;">Indonesia is still unfinished, and still hopeful. Thank you for playing.</div>`;
+    html += '<center>';
+    html += '<button style="width: 300px; text-align: center; margin-bottom: 8px; --py: 10px; --px: 10px;" onclick="returnToTitleScreen()">Return to Title Screen</button><br>';
+    html += '<button style="width: 300px; text-align: center; background-color: #ff9999; --py: 10px; --px: 10px;" onclick="closeEpilogue()">Back to Results</button>';
+    html += '</center>';
+    mainPanel.innerHTML = html;
+    scrollMainPanelToTop();
+};
+
+// Leave the epilogue and restore the election results with the side panels
+window.closeEpilogue = function() {
+    window.epilogueActive = false;
+    syncSidebarVisibility();
+    if (typeof updateMobileStatusBar === 'function') updateMobileStatusBar();
+    const mainPanel = document.getElementById('main-panel');
+    if (window.electionPanelSnapshot && mainPanel) {
+        mainPanel.innerHTML = window.electionPanelSnapshot;
+        scrollMainPanelToTop();
+    } else {
+        returnToTitleScreen();
+    }
+};
+
+// Build the State of the Republic dossier from the election summary
 function buildStateOfTheRepublicHTML() {
     const sum = window.lastElectionSummary;
     const diffName = (gameConfig.difficultySettings[selectedDifficulty] && gameConfig.difficultySettings[selectedDifficulty].name)
@@ -722,7 +1258,7 @@ function buildStateOfTheRepublicHTML() {
     }
 
     return `<div style="text-align: left; margin-top: 10px;">
-        <h2>STATE OF THE REPUBLIC</h2>
+        ${buildStateCardHTML(sum)}
 
         <div style="background-color: #DFDFDF; box-shadow: var(--bevel-sunken); padding: 10px 12px; margin-bottom: 12px; font-size: 12px;">
             <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid #808080; padding-bottom: 6px; margin-bottom: 8px;">
@@ -736,7 +1272,7 @@ function buildStateOfTheRepublicHTML() {
             </div>
         </div>
 
-        <h3 style="font-size: 13px; margin-bottom: 6px;">Seven Pillars of State (Final Assessment)</h3>
+        <h3 style="font-size: 13px; margin-bottom: 6px;">Seven Pillars of the State</h3>
         ${metricsGridHTML}
 
         <h3 style="font-size: 13px; margin-bottom: 6px;">Lembaran Negara</h3>

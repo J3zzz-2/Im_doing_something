@@ -2,36 +2,58 @@
    AUTHENTIC WINDOWS 95 / WIN32 EXECUTIVE TERMINAL THEME (styles.css)
    ========================================================================== */
 :root {
-    --win95-bg: #C0C0C0;
-    --win95-surface: #DFDFDF;
-    --win95-white: #FFFFFF;
-    --win95-shadow: #808080;
-    --win95-dark: #000000;
-    --win95-navy: #000080;
-    --win95-blue-grad: #1084D0;
+    /* ---- Palette: color schemes (css/schemes.css) override these ---- */
+    --win95-bg: #C0C0C0;          /* button / window face */
+    --win95-surface: #DFDFDF;     /* inner highlight + light fills */
+    --win95-white: #FFFFFF;       /* top-left bevel highlight */
+    --win95-shadow: #808080;      /* inner bottom-right shadow */
+    --win95-dark: #000000;        /* outer bottom-right edge */
+    --win95-navy: #000080;        /* title bar, selection (backgrounds) */
+    --win95-blue-grad: #1084D0;   /* title bar gradient end */
 
-    /* 4-Layer Classic Win95 Bevels */
+    /* ---- Content colors (only dark / high-contrast schemes change these) ---- */
+    --win95-window: #FFFFFF;      /* document wells, inputs */
+    --win95-well: #F5F5F5;        /* cards inside windows */
+    --win95-well-alt: #E0DFE3;    /* secondary panels */
+    --win95-text: #000000;
+    --win95-text-dim: #555555;
+    --win95-accent: #000080;      /* accent TEXT / borders (navy is a background color) */
+
+    /* semantic text colors used by the game's generated HTML */
+    --tone-good: #006400;
+    --tone-bad: #8B0000;
+    --tone-warn: #B8860B;
+    --tone-alert: #FF4500;
+    --tone-info: #4682B4;
+    --tone-link: #0000FF;
+    /* tinted button fills */
+    --tint-bad: #FF9999;
+    --tint-soft: #FFD6D6;
+    --tint-good: #D0E8D0;
+    --tint-warn: #FFF3CD;
+
+    /* 4-Layer Classic Win95 Bevels (built from the palette above) */
     --bevel-raised:
-        inset 1px 1px 0px #FFFFFF,
-        inset -1px -1px 0px #000000,
-        inset 2px 2px 0px #DFDFDF,
-        inset -2px -2px 0px #808080;
+        inset 1px 1px 0px var(--win95-white),
+        inset -1px -1px 0px var(--win95-dark),
+        inset 2px 2px 0px var(--win95-surface),
+        inset -2px -2px 0px var(--win95-shadow);
 
     --bevel-sunken:
-        inset 1px 1px 0px #808080,
-        inset -1px -1px 0px #FFFFFF,
-        inset 2px 2px 0px #000000,
-        inset -2px -2px 0px #DFDFDF;
+        inset 1px 1px 0px var(--win95-shadow),
+        inset -1px -1px 0px var(--win95-white),
+        inset 2px 2px 0px var(--win95-dark),
+        inset -2px -2px 0px var(--win95-surface);
 
     --bevel-status-well:
-        inset 1px 1px 0px #808080,
-        inset -1px -1px 0px #FFFFFF;
+        inset 1px 1px 0px var(--win95-shadow),
+        inset -1px -1px 0px var(--win95-white);
 
     --bevel-window:
-        inset 1px 1px 0px #DFDFDF,
-        inset -1px -1px 0px #000000,
-        inset 2px 2px 0px #FFFFFF,
-        inset -2px -2px 0px #808080,
+        inset 1px 1px 0px var(--win95-surface),
+        inset -1px -1px 0px var(--win95-dark),
+        inset 2px 2px 0px var(--win95-white),
+        inset -2px -2px 0px var(--win95-shadow),
         4px 4px 0px rgba(0, 0, 0, 0.45);
 }
 
@@ -46,7 +68,7 @@ body {
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    color: #000000;
+    color: var(--win95-text);
     margin: 12px;
     padding-bottom: 36px; /* room for the fixed Win95 taskbar */
 }
@@ -90,7 +112,7 @@ body {
     line-height: 13px;
     text-align: center;
     background-color: var(--win95-bg);
-    color: #000000;
+    color: var(--win95-text);
     font-size: 10px;
     font-weight: bold;
     box-shadow: var(--bevel-raised);
@@ -114,7 +136,7 @@ td.panel {
 }
 
 #main-panel {
-    background-color: #FFFFFF !important;
+    background-color: var(--win95-window) !important;
     box-shadow: var(--bevel-sunken) !important;
     padding: 14px 16px !important;
 }
@@ -139,17 +161,17 @@ h2 {
 
 
 h3 {
-    color: var(--win95-navy);
-    border-bottom: 1px solid #808080;
-    box-shadow: 0 1px 0 #FFFFFF;
+    color: var(--win95-accent);
+    border-bottom: 1px solid var(--win95-shadow);
+    box-shadow: 0 1px 0 var(--win95-white);
     padding-bottom: 4px;
     margin-top: 0;
 }
 
 hr {
     border: none;
-    border-top: 1px solid #808080;
-    border-bottom: 1px solid #FFFFFF;
+    border-top: 1px solid var(--win95-shadow);
+    border-bottom: 1px solid var(--win95-white);
     background: transparent;
     height: 0;
     margin: 12px 0;
@@ -182,7 +204,7 @@ hr {
     line-height: 11px;
     text-align: center;
     background-color: var(--win95-bg);
-    color: #000000;
+    color: var(--win95-text);
     font-size: 9px;
     font-weight: bold;
     text-shadow: none;
@@ -198,7 +220,7 @@ hr {
     padding: 0 !important;
     margin: 0 !important;
     background-color: var(--win95-bg) !important;
-    color: #000000 !important;
+    color: var(--win95-text) !important;
     font-size: 10px !important;
     font-weight: bold !important;
     line-height: 12px !important;
@@ -213,7 +235,7 @@ hr {
 }
 
 .win95-close-btn:hover {
-    background-color: #D4D4D4 !important;
+    background-color: var(--win95-surface) !important;
 }
 
 .win95-close-btn:active {
@@ -228,7 +250,7 @@ hr {
 .stat-row {
     margin-bottom: 5px;
     padding: 3px 6px;
-    background-color: #DFDFDF;
+    background-color: var(--win95-surface);
     border: none;
     box-shadow: var(--bevel-status-well);
     overflow: hidden;
@@ -237,7 +259,7 @@ hr {
 .stat-label {
     font-size: 11px;
     font-weight: bold;
-    color: #000000;
+    color: var(--win95-text);
 }
 
 .stat-value {
@@ -251,9 +273,9 @@ hr {
     font-weight: bold;
     margin-top: 2px;
     margin-bottom: 14px;
-    color: #000000;
+    color: var(--win95-text);
     text-align: center;
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     border: none;
     box-shadow: var(--bevel-sunken);
     padding: 6px;
@@ -267,7 +289,7 @@ button {
     --px: 12px;
     --nudge: 1px;
     background-color: var(--win95-bg);
-    color: #000000;
+    color: var(--win95-text);
     border: none;
     box-shadow: var(--bevel-raised);
     padding: var(--py) var(--px);
@@ -281,8 +303,8 @@ button {
     position: relative;
 }
 
-/* Hover/pressed feedback is a brightness filter, not a fixed colour, so it behaves the same on
-   every button: grey, tinted (Back/Return), selected, or pulsing. Hover only where a pointer exists. */
+/* Hover/pressed feedback is a brightness filter, not a fixed color, so it behaves the same on
+   every button: gray, tinted (Back/Return), selected, or pulsing. Hover only where a pointer exists. */
 @media (hover: hover) {
     button:hover:not(:disabled) {
         filter: brightness(1.06);
@@ -299,26 +321,26 @@ button:active:not(:disabled) {
     box-shadow:
         inset 1px 1px 0px #000000,
         inset -1px -1px 0px #000000,
-        inset 2px 2px 0px #808080,
-        inset -2px -2px 0px #808080;
+        inset 2px 2px 0px var(--win95-shadow),
+        inset -2px -2px 0px var(--win95-shadow);
     padding: calc(var(--py) + var(--nudge)) calc(var(--px) - var(--nudge)) calc(var(--py) - var(--nudge)) calc(var(--px) + var(--nudge));
 }
 
 /* One "selected / toggled on" look for every button group (tabs, speed, theme, language, chapters...):
-   sunken bevel, light fill, navy label. Replaces bold + assorted grey fills + inset borders. */
+   sunken bevel, light fill, navy label. Replaces bold + assorted gray fills + inset borders. */
 button.is-selected,
 button.is-selected:hover:not(:disabled),
 button.is-selected:active:not(:disabled) {
-    background-color: #DFDFDF;
+    background-color: var(--win95-surface);
     box-shadow: var(--bevel-sunken);
-    color: #000080;
+    color: var(--win95-accent);
     filter: none;
     --nudge: 0px;
 }
 
 button:disabled {
-    color: #555555;
-    text-shadow: 1px 1px 0px #FFFFFF;
+    color: var(--win95-text-dim);
+    text-shadow: 1px 1px 0px var(--win95-white);
 }
 
 /* --- Win95 Sunken Checkboxes --- */
@@ -328,7 +350,7 @@ input[type="checkbox"] {
     appearance: none;
     width: 13px;
     height: 13px;
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-sunken);
     vertical-align: middle;
     margin: 0 6px 2px 0;
@@ -338,7 +360,7 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:disabled {
-    background-color: #C0C0C0;
+    background-color: var(--win95-bg);
     cursor: not-allowed;
 }
 
@@ -349,7 +371,7 @@ input[type="checkbox"]:checked::after {
     top: 1px;
     width: 4px;
     height: 7px;
-    border: solid #000000;
+    border: solid var(--win95-text);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
@@ -359,7 +381,7 @@ input[type="checkbox"]:checked::after {
     border: none !important;
     box-shadow: var(--bevel-sunken) !important;
     padding: 2px;
-    background-color: #808080;
+    background-color: var(--win95-shadow);
     box-sizing: border-box;
 }
 
@@ -368,8 +390,8 @@ input[type="checkbox"]:checked::after {
     margin-bottom: 15px;
     font-size: 13px;
     line-height: 1.6;
-    color: #111111;
-    background-color: #F5F5F5;
+    color: var(--win95-text);
+    background-color: var(--win95-well);
     padding: 12px;
     box-shadow: var(--bevel-sunken);
 }
@@ -389,8 +411,8 @@ input[type="checkbox"]:checked::after {
     width: 100%;
     box-sizing: border-box;
     padding: 4px;
-    background-color: #FFFFFF;
-    color: #000000;
+    background-color: var(--win95-window);
+    color: var(--win95-text);
     border: none;
     box-shadow: var(--bevel-sunken);
     margin-bottom: 8px;
@@ -423,7 +445,7 @@ audio {
 .mpr-section {
     margin: 6px 6px 2px 6px;
     border: none;
-    background-color: #E0DFE3;
+    background-color: var(--win95-well-alt);
     box-shadow: var(--bevel-sunken);
     padding: 10px;
 }
@@ -454,7 +476,7 @@ audio {
 }
 
 .mpr-quote {
-    color: #000080;
+    color: var(--win95-accent);
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 15px;
@@ -510,7 +532,7 @@ audio {
 
 .portrait-seats {
     font-size: 10px;
-    color: #333333;
+    color: var(--win95-text-dim);
     margin-top: 2px;
     margin-bottom: 2px;
 }
@@ -557,7 +579,7 @@ audio {
 #custom-alert-message {
     padding: 10px;
     font-size: 14px;
-    color: #000;
+    color: var(--win95-text);
     line-height: 1.5;
     white-space: normal;
     max-height: 72vh;
@@ -585,7 +607,7 @@ audio {
 .achv-icon {
     width: 32px;
     height: 32px;
-    background-color: #808080;
+    background-color: var(--win95-shadow);
     border: none;
     box-shadow: var(--bevel-raised);
     cursor: help;
@@ -628,8 +650,8 @@ audio {
 #toast-name {
     padding: 6px 8px;
     font-weight: bold;
-    color: #000000;
-    background-color: #DFDFDF;
+    color: var(--win95-text);
+    background-color: var(--win95-surface);
     box-shadow: var(--bevel-status-well);
 }
 
@@ -646,7 +668,7 @@ audio {
 .achievement-icon {
     width: 48px;
     height: 48px;
-    background-color: #808080;
+    background-color: var(--win95-shadow);
     border: none;
     box-shadow: var(--bevel-sunken);
     margin-right: 15px;
@@ -681,22 +703,22 @@ audio {
 .achievement-title {
     font-size: 14px;
     font-weight: bold;
-    color: #000080;
+    color: var(--win95-accent);
     margin-bottom: 4px;
 }
 
 .achievement-desc {
     font-size: 12px;
-    color: #222222;
+    color: var(--win95-text);
 }
 
 /* ========================================== */
 /* --- ANIMATIONS & CRT OVERLAY           --- */
 /* ========================================== */
 @keyframes pulseNewAction {
-    0% { background-color: #C0C0C0; }
-    50% { background-color: #DFDFDF; }
-    100% { background-color: #C0C0C0; }
+    0% { background-color: var(--win95-bg); }
+    50% { background-color: var(--win95-surface); }
+    100% { background-color: var(--win95-bg); }
 }
 .new-action-btn {
     animation: pulseNewAction 1.5s infinite;
@@ -744,16 +766,16 @@ input[type=range]::-webkit-slider-runnable-track {
     height: 4px;
     cursor: pointer;
     background: #000000;
-    border-top: 1px solid #808080;
-    border-left: 1px solid #808080;
-    border-bottom: 1px solid #FFFFFF;
-    border-right: 1px solid #FFFFFF;
+    border-top: 1px solid var(--win95-shadow);
+    border-left: 1px solid var(--win95-shadow);
+    border-bottom: 1px solid var(--win95-white);
+    border-right: 1px solid var(--win95-white);
 }
 
 input[type=range]::-webkit-slider-thumb {
     height: 18px;
     width: 11px;
-    background: #C0C0C0;
+    background: var(--win95-bg);
     cursor: pointer;
     -webkit-appearance: none;
     margin-top: -8px;
@@ -765,16 +787,16 @@ input[type=range]::-moz-range-track {
     height: 4px;
     cursor: pointer;
     background: #000000;
-    border-top: 1px solid #808080;
-    border-left: 1px solid #808080;
-    border-bottom: 1px solid #FFFFFF;
-    border-right: 1px solid #FFFFFF;
+    border-top: 1px solid var(--win95-shadow);
+    border-left: 1px solid var(--win95-shadow);
+    border-bottom: 1px solid var(--win95-white);
+    border-right: 1px solid var(--win95-white);
 }
 
 input[type=range]::-moz-range-thumb {
     height: 18px;
     width: 11px;
-    background: #C0C0C0;
+    background: var(--win95-bg);
     cursor: pointer;
     border: none;
     box-shadow: var(--bevel-raised);
@@ -789,36 +811,36 @@ input[type=range]::-moz-range-thumb {
     ::-webkit-scrollbar {
         width: 16px;
         height: 16px;
-        background-color: #C0C0C0;
+        background-color: var(--win95-bg);
     }
 
     ::-webkit-scrollbar-track {
-        background-color: #C0C0C0;
+        background-color: var(--win95-bg);
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23C0C0C0'/%3E%3Crect x='0' y='0' width='1' height='1' fill='%23FFFFFF'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23FFFFFF'/%3E%3C/svg%3E");
         background-size: 2px 2px;
     }
 
     ::-webkit-scrollbar-thumb {
-        background-color: #C0C0C0;
+        background-color: var(--win95-bg);
         box-shadow: var(--bevel-raised);
     }
 
     ::-webkit-scrollbar-corner {
-        background-color: #C0C0C0;
+        background-color: var(--win95-bg);
     }
 
     ::-webkit-scrollbar-button:single-button {
         display: block;
         width: 16px;
         height: 16px;
-        background-color: #C0C0C0;
+        background-color: var(--win95-bg);
         background-repeat: no-repeat;
         background-position: 0 0;
         box-shadow: var(--bevel-raised);
     }
 
     ::-webkit-scrollbar-button:single-button:active {
-        box-shadow: inset 0 0 0 1px #808080;
+        box-shadow: inset 0 0 0 1px var(--win95-shadow);
         background-position: 1px 1px;
     }
 
@@ -845,7 +867,7 @@ input[type=range]::-moz-range-thumb {
 @supports (-moz-appearance: none) {
     * {
         scrollbar-width: auto;
-        scrollbar-color: #C0C0C0 #DFDFDF;
+        scrollbar-color: var(--win95-bg) var(--win95-surface);
     }
 }
 
@@ -885,7 +907,7 @@ input[type=range]::-moz-range-thumb {
     background-color: #FCFBF7;
     color: #111111;
     box-shadow: var(--bevel-sunken);
-    border: 1px solid #808080;
+    border: 1px solid var(--win95-shadow);
     padding: 18px 22px;
     margin: 16px auto 10px auto;
     max-width: 720px;
@@ -914,7 +936,7 @@ input[type=range]::-moz-range-thumb {
 .tap-mpr-signatures {
     margin-top: 12px;
     padding-top: 8px;
-    border-top: 1px dotted #808080;
+    border-top: 1px dotted var(--win95-shadow);
     font-size: 12px;
 }
 
@@ -922,7 +944,7 @@ input[type=range]::-moz-range-thumb {
     display: inline-block;
     width: 100%;
     box-sizing: border-box;
-    background-color: #DFDFDF;
+    background-color: var(--win95-surface);
     box-shadow: var(--bevel-status-well);
     padding: 6px;
     margin-bottom: 12px;
@@ -940,7 +962,7 @@ input[type=range]::-moz-range-thumb {
     position: relative;
     width: 100%;
     height: 26px;
-    background-color: #808080;
+    background-color: var(--win95-shadow);
     border: none;
     box-shadow: var(--bevel-sunken);
     display: flex;
@@ -1000,7 +1022,7 @@ input[type=range]::-moz-range-thumb {
     height: auto;
     min-height: 165px;
     margin: 0 auto;
-    background-color: #E0DFE3;
+    background-color: var(--win95-well-alt);
     border: none;
     box-shadow: var(--bevel-sunken);
     overflow: hidden;
@@ -1012,8 +1034,8 @@ input[type=range]::-moz-range-thumb {
     height: 10px;
     transform: translate(-50%, -50%);
     background-color: #A9A9A9;
-    border-top: 1px solid #FFFFFF;
-    border-left: 1px solid #FFFFFF;
+    border-top: 1px solid var(--win95-white);
+    border-left: 1px solid var(--win95-white);
     border-right: 1px solid #222222 !important;
     border-bottom: 1px solid #222222 !important;
     border-radius: 0;
@@ -1046,7 +1068,7 @@ input[type=range]::-moz-range-thumb {
     background-color: var(--win95-bg);
     border: none;
     box-shadow: var(--bevel-raised);
-    color: #000080;
+    color: var(--win95-accent);
     font-size: 10px;
     font-weight: bold;
     padding: 3px 14px;
@@ -1058,7 +1080,7 @@ input[type=range]::-moz-range-thumb {
 .tally-box table {
     width: 100%;
     border-collapse: collapse;
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     border: none !important;
     box-shadow: var(--bevel-sunken);
 }
@@ -1076,27 +1098,27 @@ input[type=range]::-moz-range-thumb {
 }
 
 .tally-box tr[bgcolor="#000080"] font {
-    color: #000000 !important;
+    color: var(--win95-text) !important;
 }
 
 /* Standard Tally Data Rows */
 .tally-box tr:not([bgcolor="#000080"]):not([bgcolor="#FFFF00"]) td {
-    border: 1px solid #DFDFDF !important;
+    border: 1px solid var(--win95-surface) !important;
     padding: 6px 8px;
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
 }
 
 .tally-box tr:not([bgcolor="#000080"]):not([bgcolor="#FFFF00"]):nth-child(even) td {
-    background-color: #F7F7F7;
+    background-color: var(--win95-well);
 }
 
 /* Current Tally Footer Row (Win95 Status Well) */
 .tally-box tr[bgcolor="#FFFF00"] {
-    background-color: #DFDFDF !important;
+    background-color: var(--win95-surface) !important;
 }
 
 .tally-box tr[bgcolor="#FFFF00"] td {
-    background-color: #DFDFDF !important;
+    background-color: var(--win95-surface) !important;
     box-shadow: var(--bevel-status-well);
     border: none !important;
     padding: 8px;
@@ -1105,14 +1127,14 @@ input[type=range]::-moz-range-thumb {
 #election-result-container {
     margin-top: 12px;
     padding: 12px;
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-sunken);
 }
 
 .faction-mini-bar-wrap {
     width: 100%;
     height: 7px;
-    background-color: #CCCCCC;
+    background-color: var(--win95-well-alt);
     border: none;
     box-shadow: var(--bevel-status-well);
     margin-top: 4px;
@@ -1147,17 +1169,17 @@ input[type=range]::-moz-range-thumb {
     --py: 6px;
     --px: 12px;
     margin-bottom: 0 !important;
-    background-color: #C0C0C0;
+    background-color: var(--win95-bg);
 }
 
 .mpr-parliament-readout {
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-sunken);
     padding: 5px 10px;
     margin-bottom: 8px;
     text-align: center;
     font-size: 12px;
-    color: #111111;
+    color: var(--win95-text);
     min-height: 18px;
 }
 
@@ -1184,13 +1206,13 @@ input[type=range]::-moz-range-thumb {
     gap: 6px;
     margin-top: 8px;
     padding: 6px;
-    background-color: #E0DFE3;
+    background-color: var(--win95-well-alt);
 }
 
 .mpr-legend-item {
     display: inline-flex;
     align-items: center;
-    background-color: #C0C0C0;
+    background-color: var(--win95-bg);
     box-shadow: var(--bevel-raised);
     padding: 4px 8px;
     font-size: 11px;
@@ -1198,7 +1220,7 @@ input[type=range]::-moz-range-thumb {
 }
 
 .mpr-legend-item:hover:not(.mpr-legend-banned) {
-    background-color: #D0D0D0;
+    background-color: var(--win95-surface);
 }
 
 .mpr-legend-item:active:not(.mpr-legend-banned) {
@@ -1238,7 +1260,7 @@ input[type=range]::-moz-range-thumb {
 }
 
 .action-image-card:hover:not(.action-image-disabled) {
-    background-color: #CFCFCF;
+    background-color: var(--win95-surface);
 }
 
 .action-image-card:active:not(.action-image-disabled) {
@@ -1273,7 +1295,7 @@ input[type=range]::-moz-range-thumb {
 .action-image-title {
     font-size: 14px;
     font-weight: bold;
-    color: #000080;
+    color: var(--win95-accent);
     margin-bottom: 3px;
 }
 
@@ -1285,7 +1307,7 @@ input[type=range]::-moz-range-thumb {
 }
 
 .state-gazette-box {
-    background-color: #DFDFDF;
+    background-color: var(--win95-surface);
     box-shadow: var(--bevel-sunken);
     padding: 8px 10px;
     margin-bottom: 8px;
@@ -1346,9 +1368,9 @@ input[type=range]::-moz-range-thumb {
 }
 
 .update-notice-body {
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-sunken);
-    color: #000000;
+    color: var(--win95-text);
     font-size: 14px;
     line-height: 1.5;
     padding: 12px 14px;
@@ -1358,14 +1380,14 @@ input[type=range]::-moz-range-thumb {
 
 .update-notice-meta {
     font-size: 12px;
-    color: #444444;
+    color: var(--win95-text-dim);
     margin-bottom: 6px;
 }
 
 .update-notice-heading {
     font-size: 16px;
     font-weight: bold;
-    color: #000080;
+    color: var(--win95-accent);
     margin-bottom: 8px;
 }
 
@@ -1382,19 +1404,19 @@ input[type=range]::-moz-range-thumb {
 .update-older {
     margin-top: 10px;
     padding-top: 8px;
-    border-top: 1px solid #808080;
+    border-top: 1px solid var(--win95-shadow);
 }
 
 .update-older summary {
     cursor: pointer;
     font-weight: bold;
-    color: #000080;
+    color: var(--win95-accent);
 }
 
 .update-older .update-entry {
     margin-top: 10px;
     padding-top: 8px;
-    border-top: 1px dotted #A0A0A0;
+    border-top: 1px dotted var(--win95-shadow);
 }
 
 /* Sticky status bar (mobile only): keeps PC, Gov. Stability and metrics reachable while scrolling */
@@ -1473,7 +1495,7 @@ input[type=range]::-moz-range-thumb {
         gap: 8px;
         margin-bottom: 4px;
         padding: 4px 6px;
-        background-color: #DFDFDF;
+        background-color: var(--win95-surface);
         box-shadow: var(--bevel-status-well);
         font-size: 12px;
     }
@@ -1788,15 +1810,15 @@ input[type=range]::-moz-range-thumb {
     min-width: 180px;
     padding: 4px 6px;
     font-size: 12px;
-    background-color: #FFFFFF;
-    color: #000000;
+    background-color: var(--win95-window);
+    color: var(--win95-text);
     border: none;
     box-shadow: var(--bevel-sunken);
     outline: none;
 }
 
 .library-list-well {
-    background-color: #DFDFDF;
+    background-color: var(--win95-surface);
     box-shadow: var(--bevel-sunken);
     padding: 8px;
     max-height: 540px;
@@ -1804,7 +1826,7 @@ input[type=range]::-moz-range-thumb {
 }
 
 .library-entry-card {
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-status-well);
     padding: 10px 12px;
     margin-bottom: 8px;
@@ -1821,7 +1843,7 @@ input[type=range]::-moz-range-thumb {
     align-items: baseline;
     flex-wrap: wrap;
     gap: 6px;
-    border-bottom: 1px solid #000080;
+    border-bottom: 1px solid var(--win95-accent);
     padding-bottom: 3px;
     margin-bottom: 4px;
 }
@@ -1829,13 +1851,13 @@ input[type=range]::-moz-range-thumb {
 .library-entry-term {
     font-size: 14px;
     font-weight: bold;
-    color: #000080;
+    color: var(--win95-accent);
 }
 
 .library-entry-sub {
     font-size: 11px;
     font-style: italic;
-    color: #555555;
+    color: var(--win95-text-dim);
     margin-bottom: 5px;
     font-weight: bold;
 }
@@ -1843,7 +1865,7 @@ input[type=range]::-moz-range-thumb {
 .library-entry-desc {
     font-size: 12.5px;
     line-height: 1.55;
-    color: #151515;
+    color: var(--win95-text);
 }
 
 .library-entry-with-portrait {
@@ -1893,7 +1915,7 @@ input[type=range]::-moz-range-thumb {
     margin: 4px auto 18px auto;
     background-color: #A9A9A9;
     box-shadow: var(--bevel-sunken);
-    border: 2px solid #808080;
+    border: 2px solid var(--win95-shadow);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1970,7 +1992,7 @@ input[type=range]::-moz-range-thumb {
     align-items: baseline;
     font-size: 12px;
     font-weight: bold;
-    color: #000000;
+    color: var(--win95-text);
     margin-bottom: 6px;
     gap: 8px;
 }
@@ -1978,7 +2000,7 @@ input[type=range]::-moz-range-thumb {
 .win95-progress-well {
     width: 100%;
     height: 22px;
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-sunken);
     padding: 3px;
     box-sizing: border-box;
@@ -2001,8 +2023,8 @@ input[type=range]::-moz-range-thumb {
 .win95-loader-filepath {
     margin-top: 6px;
     font-size: 10px;
-    color: #444444;
-    background-color: #DFDFDF;
+    color: var(--win95-text-dim);
+    background-color: var(--win95-surface);
     box-shadow: var(--bevel-status-well);
     padding: 3px 6px;
     white-space: nowrap;
@@ -2020,7 +2042,7 @@ input[type=range]::-moz-range-thumb {
     right: 0;
     height: 28px;
     background-color: var(--win95-bg);
-    box-shadow: inset 0 1px 0 #DFDFDF, inset 0 2px 0 #FFFFFF;
+    box-shadow: inset 0 1px 0 var(--win95-surface), inset 0 2px 0 var(--win95-white);
     display: flex;
     align-items: center;
     padding: 2px 4px;
@@ -2043,7 +2065,7 @@ input[type=range]::-moz-range-thumb {
 
 .active-depressed {
     box-shadow: var(--bevel-sunken) !important;
-    background-color: #DFDFDF !important;
+    background-color: var(--win95-surface) !important;
 }
 button.active-depressed:hover:not(:disabled),
 button.active-depressed:active:not(:disabled) {
@@ -2054,8 +2076,8 @@ button.active-depressed:active:not(:disabled) {
 .taskbar-divider {
     width: 2px;
     height: 20px;
-    background-color: #808080;
-    border-right: 1px solid #FFFFFF;
+    background-color: var(--win95-shadow);
+    border-right: 1px solid var(--win95-white);
     margin: 0 2px;
     flex-shrink: 0;
 }
@@ -2181,7 +2203,7 @@ button.active-depressed:active:not(:disabled) {
     background-color: var(--win95-bg);
     box-shadow: var(--bevel-raised);
     padding: 5px;
-    display: flex;           /* lets the sunken body fill the card when a neighbour card is taller */
+    display: flex;           /* lets the sunken body fill the card when a neighbor card is taller */
     flex-direction: column;
 }
 
@@ -2199,29 +2221,29 @@ button.active-depressed:active:not(:disabled) {
 
 .settings-card-body {
     flex: 1 1 auto;
-    background-color: #F7F7F7;
+    background-color: var(--win95-well);
     box-shadow: var(--bevel-sunken);
     padding: 10px 12px;
     font-size: 12.5px;
     font-weight: normal;
-    color: #111111;
+    color: var(--win95-text);
 }
 
 .settings-row {
-    border-bottom: 1px dotted #A0A0A0;
+    border-bottom: 1px dotted var(--win95-shadow);
     padding-bottom: 9px;
     margin-bottom: 9px;
 }
 
 .settings-hint {
     font-size: 11px;
-    color: #555555;
+    color: var(--win95-text-dim);
     margin-top: 2px;
     margin-left: 20px;
 }
 
 .settings-sunken-well {
-    background-color: #E4E4E4;
+    background-color: var(--win95-well-alt);
     box-shadow: var(--bevel-status-well);
     padding: 6px 8px;
     font-size: 11.5px;
@@ -2276,7 +2298,7 @@ button.active-depressed:active:not(:disabled) {
 }
 
 .brand-btn:hover:not(:disabled) {
-    filter: none; /* brand buttons use their own darker hover colour below */
+    filter: none; /* brand buttons use their own darker hover color below */
 }
 
 .brand-btn {
@@ -2330,15 +2352,15 @@ button.active-depressed:active:not(:disabled) {
 
 /* --- Feedback Telex Box --- */
 .settings-feedback-box {
-    background-color: #E8E7EC;
+    background-color: var(--win95-well-alt);
     box-shadow: var(--bevel-sunken);
     padding: 10px;
     margin-top: 6px;
 }
 
 .settings-select {
-    background-color: #FFFFFF;
-    color: #000000;
+    background-color: var(--win95-window);
+    color: var(--win95-text);
     border: none;
     box-shadow: var(--bevel-sunken);
     padding: 3px 6px;
@@ -2350,8 +2372,8 @@ button.active-depressed:active:not(:disabled) {
 .settings-textarea {
     width: 100%;
     box-sizing: border-box;
-    background-color: #FFFFFF;
-    color: #000000;
+    background-color: var(--win95-window);
+    color: var(--win95-text);
     border: none;
     box-shadow: var(--bevel-sunken);
     padding: 6px 8px;
@@ -2377,13 +2399,13 @@ button.active-depressed:active:not(:disabled) {
 .faction-color-tag {
     display: inline-flex;
     align-items: center;
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-status-well);
     padding: 2px 7px 2px 5px;
     margin: 2px 4px 2px 0;
     font-size: 11.5px;
     line-height: 1.35;
-    color: #111111;
+    color: var(--win95-text);
     vertical-align: middle;
 }
 
@@ -2397,7 +2419,7 @@ button.active-depressed:active:not(:disabled) {
 }
 
 .whip-group-block {
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-status-well);
     padding: 7px 9px;
     margin-bottom: 6px;
@@ -2435,7 +2457,7 @@ button.active-depressed:active:not(:disabled) {
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    background-color: #FFFFFF;
+    background-color: var(--win95-window);
     box-shadow: var(--bevel-status-well);
     padding: 6px 8px;
     margin-bottom: 5px;
@@ -2463,4 +2485,24 @@ button.active-depressed:active:not(:disabled) {
     margin: 0 !important;
     font-size: 11px !important;
     font-weight: bold;
+}
+
+/* ==========================================================================
+   EVENT & CONTENT IMAGES
+   These pictures are drawn with an inline 400x200 style (game.js, election.js):
+   event.image -> .event-image; tutorial / history pages, difficulty, situation,
+   Habibie and faction covers, election endings -> .content-image.
+   On phones the inline size stays exactly as it was. On wider screens they grow
+   to fill their window: full width, same 2:1 crop, never taller than 440px.
+   (The title-screen banner is a separate element and is already full width.)
+   ========================================================================== */
+@media (min-width: 821px) {
+    img.event-image,
+    img.content-image {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 2 / 1;
+        max-height: 440px !important;
+        box-sizing: border-box;
+    }
 }
