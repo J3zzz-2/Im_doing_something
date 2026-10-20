@@ -33,6 +33,29 @@ window.exitDebugElectionToMenu = function() {
     showStartMenu();
 };
 
+window.givePC = function(amount = 100) {
+    if (typeof stats === 'undefined') {
+        console.warn("Start the game first!");
+        return;
+    }
+
+    const prev = stats.PC;
+    // Tops you off cleanly to 100 (or whatever max is)
+    stats.PC = typeof clampPC === 'function' ? clampPC(stats.PC + amount) : Math.min(100, stats.PC + amount);
+
+    if (typeof logPCChange === 'function') {
+        logPCChange(stats.PC - prev, 'debug_cheat');
+    }
+    if (typeof updateUI === 'function') {
+        updateUI();
+    }
+    if (typeof saveCampaignState === 'function') {
+        saveCampaignState();
+    }
+
+    console.log(`[DEBUG] Granted ${stats.PC - prev} PC. Current PC: ${stats.PC}`);
+};
+
 // Start a debug MPR election with randomized national metrics and faction loyalty
 window.runDebugElection = function(preset = 'pure_random') {
     debugDisableSaving();

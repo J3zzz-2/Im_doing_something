@@ -126,16 +126,16 @@
     {
       "id": "pdip_kiemas",
       "text": "Dispatch an envoy to dine privately with Taufik Kiemas",
-      "cost": 12,
+      "cost": 17,
       "repeatable": true,
       "maxTurn": 21,
       "minTurn": 0,
       "description": "Where <font color=\"#C0392B\"><b>Megawati</b></font> treats politics as a matter of principle, silence, and filial destiny, her husband <font color=\"#C0392B\"><b>Taufik Kiemas</b></font>—a fellow former <font color=\"#C0392B\"><b>GMNI</b></font> activist from South Sumatra who endured <font color=\"#704d00\"><b>New Order</b></font> prison cells—operates as the pragmatic broker of the Kebagusan household. Bypass the ideological hardliners on the party board and route a quiet overture through <font color=\"#C0392B\"><b>Kiemas</b></font> to keep communication lines open between Bina Graha and <font color=\"#C0392B\"><b>Teuku Umar</b></font>.",
       "effects": {
-        "pdip": 7,
-        "ref": 2,
+        "pdip": 5,
+        "ref": 1,
         "pop": 1,
-        "stab": 2
+        "stab": 1
       },
       "alertMsg": "Over a late dinner of Palembang pempek and clove cigarettes far from the television cameras at Senayan, Taufik Kiemas listens with genial, worldly pragmatism. He makes no promises on his wife's behalf, but agrees to keep hotheads in the parliamentary faction from burning every bridge to the Palace."
     },

@@ -81,7 +81,7 @@
     {
       "id": "golkar_threaten",
       "text": "Subtly remind Slipi's leadership of the sensitive financial dossiers sitting on your desk",
-      "cost": 12,
+      "cost": 16,
       "repeatable": true,
       "maxTurn": 21,
       "minTurn": 6,
@@ -89,8 +89,8 @@
       "effects": {
         "golkar_akbar": 7,
         "cendana": -5,
-        "stab": -2,
-        "golkar_habibie": 3,
+        "stab": -5,
+        "golkar_habibie": 2,
         "pop": 1,
         "ref": 1
       },

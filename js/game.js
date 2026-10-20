@@ -75,6 +75,18 @@ function deepClone(obj) {
 // Compute a faction's leverage over the president from its metrics
 function getFactionLeverage(factionKey) {
     const metrics = FACTION_LEVERAGE_METRICS[factionKey];
+
+    if (factionKey === 'poros_tengah' && factions['poros_tengah'] && factions['poros_tengah'].hasMerged) {
+        return {
+            val: 90,
+            text: "Kingmaker Extortion",
+            desc: "Commanding 163 seats, the Axis demands astronomical concessions to back an incumbent",
+            color: "#8B0000",
+            costMult: 1.55,   // Everything costs 55% more PC
+            gainMult: 0.70    // Harder to move their loyalty needle
+        };
+    }
+
     if (!metrics) {
         return {
             val: 50,
@@ -182,6 +194,64 @@ function getPlainStatTierName(statKey, val) {
     return statTiers[statTiers.length - 1].text;
 }
 
+// Hotfix 0.1.2: Increase betrayal
+function getNationalBetrayalPressure() {
+    let pressure = 0;
+
+    // 1. Street Unrest: If riots are raging, delegates panic about backing a dead man
+    if (stats.stab < 25) pressure += 12;
+    else if (stats.stab < 45) pressure += 6;
+    else if (stats.stab >= 70) pressure -= 6; // Peace makes delegates feel safe backing you
+
+    // 2. Tanking Economy: If the rupiah is crashing, technocrat credibility evaporates
+    if (stats.econ < 25) pressure += 10;
+    else if (stats.econ < 45) pressure += 5;
+    else if (stats.econ >= 70) pressure -= 5;
+
+    // 3. Cendana Briefcases: Shadow cash moving through Hotel Mulia buying defectors
+    if (stats.cendana >= 80) pressure += 10;
+    else if (stats.cendana >= 60) pressure += 5;
+    else if (stats.cendana <= 30) pressure -= 6;
+
+    // 4. Public Hatred: If the public hates you, voting "Accept" is suicide back home
+    if (stats.pop < 30) pressure += 8;
+    else if (stats.pop < 45) pressure += 4;
+
+    // 5. Reformasi Betrayal: Looking like New Order 2.0 alienates moderates
+    if (stats.ref < 30) pressure += 8;
+    else if (stats.ref < 45) pressure += 4;
+
+    return Math.max(0, pressure);
+}
+
+function getFactionDefectionRate(key, effAff) {
+    // Ride-or-die loyalists almost never defect
+    if (key === 'golkar_habibie') return 0.02;
+
+    const pressure = getNationalBetrayalPressure(); // ranges roughly 0 to 40+
+    
+    // Faction susceptibility modifiers (some parties are way snake-ier than others)
+    let susceptibility = 1.0;
+    if (key === 'golkar_akbar') susceptibility = 1.4;    // Akbar's "Golkar Putih" dissidents love backstabbing
+    if (key === 'utusan_daerah') susceptibility = 1.25;  // Regional delegates blow with the financial wind
+    if (key === 'poros_tengah') susceptibility = 1.3;   // Amien & Gus Dur delegates look for any excuse to take power
+    if (key === 'other_parties') susceptibility = 1.2;   // Small fish get bought out easily
+    if (key === 'abri' && window.wirantoLocked) susceptibility = 0.5; // Military discipline holds unless broken
+
+    // Ironclad supporters (85+) barely defect; fence-sitters (35-70) bleed heavily in secret
+    let loyaltyShield = 1.0;
+    if (effAff >= 85) loyaltyShield = 0.15;
+    else if (effAff >= 70) loyaltyShield = 0.45;
+    else if (effAff >= 50) loyaltyShield = 0.85;
+    else loyaltyShield = 1.2;
+
+    // Jitter: human chaos behind the curtain (adds a tiny ±3% RNG)
+    const jitter = ((Math.random() * 6) - 3) / 100;
+
+    const baseDefection = (pressure * 0.008) * susceptibility * loyaltyShield;
+    return Math.max(0, Math.min(0.50, baseDefection + jitter)); // max 50% can defect in secret
+}
+
 // Estimated vote margin over the majority mark (the real vote's model without variance); null before the Assembly convenes
 function getWhipMargin() {
     if (!gameStarted) return null;
@@ -202,14 +272,21 @@ function getWhipMargin() {
         const favorBonus = (f.favor || 0) * 8;
         const effAff = clampFaction(key, f.affinity + favorBonus + stabilityFloorMod - cendanaSabotage);
 
+        let baselineTurnout = 0;
         if (key === 'pdip' || key === 'poros_tengah' || key === 'abri') {
-            if (effAff >= 80) estVotes += f.seats * 0.96;
-            else if (effAff >= 65) estVotes += f.seats * 0.72;
-            else if (effAff >= 50) estVotes += f.seats * 0.42;
-            else if (effAff >= 35) estVotes += f.seats * 0.15;
+            if (effAff >= 80) baselineTurnout = 0.96;
+            else if (effAff >= 65) baselineTurnout = 0.72;
+            else if (effAff >= 50) baselineTurnout = 0.42;
+            else if (effAff >= 35) baselineTurnout = 0.15;
         } else {
-            estVotes += f.seats * (effAff / 100);
+            baselineTurnout = effAff / 100;
         }
+
+        // Hotfix 0.1.2
+        const defectionRate = getFactionDefectionRate(key, effAff);
+        const actualVoteRate = Math.max(0, baselineTurnout - defectionRate);
+
+        estVotes += f.seats * actualVoteRate;
     }
 
     const majorityMark = Math.floor(activeTotalSeats / 2) + 1;
@@ -317,6 +394,8 @@ let updatesData = null;
 // Turn & Action Economy Tracking
 let actionCooldowns = {};
 let actionUsageCount = {};
+let factionCooldowns = {};
+let factionUsageCount = {};
 let turnExecutiveUsed = false;
 let turnFactionUsed = false;
 let prevStatsSnapshot = null;
@@ -1385,28 +1464,60 @@ window.showPCLog = function() {
 // Unified helper to apply military/ABRI changes while respecting & straining the Wiranto Lock
 function applyMilitaryDelta(delta) {
     if (!factions['abri'] || !delta) return;
+
     if (window.wirantoLocked) {
+        // CASE 1: One catastrophic blow (delta <= -15)
         if (delta <= -15) {
             window.wirantoLocked = false;
             const totalDrop = delta + window.wirantoStrain;
             window.wirantoStrain = 0;
             factions['abri'].affinity = clampFaction('abri', factions['abri'].affinity + totalDrop);
+
+            // The Palace loses security control
+            stats.stab = clampDashboard('stab', stats.stab - 8);
+            if (factions['golkar_akbar']) {
+                factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 8);
+            }
+
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert("<font color='#8B0000'><b>CILANGKAP PACT BROKEN!</b></font><br>General Wiranto has formally terminated operational consultations with Merdeka Palace. Military liaison officers have vacated Bina Graha, territorial commands are confined to barracks, and civilian riot-control requests are no longer being acknowledged.", null);
+            }
+
+        // CASE 2: Negative delta that strains Wiranto's patience
         } else if (delta < 0) {
             window.wirantoStrain += delta;
+
+            // Cumulative strain reaches the breaking point (-20 strain)
             if (window.wirantoStrain <= -20) {
                 window.wirantoLocked = false;
                 factions['abri'].affinity = clampFaction('abri', 50 + window.wirantoStrain);
                 window.wirantoStrain = 0;
+
+                // Slow-burn betrayal finally snaps
+                stats.stab = clampDashboard('stab', stats.stab - 8);
+                if (factions['golkar_akbar']) {
+                    factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 8);
+                }
+
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert("<font color='#8B0000'><b>CILANGKAP PACT COLLAPSED!</b></font><br><br>Armed forces headquarters has quietly suspended its working arrangement with the Palace. Regional commands have been instructed to hold in place, and military delegates in Senayan have ceased coordinating with government floor managers.", null);
+                }
             } else {
+                // Pact still holds, but strain accumulates; affinity stays clamped at 50 floor
                 factions['abri'].affinity = Math.max(50, clampFaction('abri', factions['abri'].affinity + delta));
             }
+
+        // CASE 3: Positive delta heals accumulated strain
         } else {
             window.wirantoStrain = Math.min(0, window.wirantoStrain + Math.round(delta * 0.5));
             factions['abri'].affinity = clampFaction('abri', Math.max(50, factions['abri'].affinity + delta));
         }
+
+    // CASE 4: The lock is already broken; ABRI affinity rises and falls freely
     } else {
         factions['abri'].affinity = clampFaction('abri', factions['abri'].affinity + delta);
     }
+
     stats.mil = Math.round(factions['abri'].affinity);
 }
 
@@ -2419,6 +2530,10 @@ function loadPhase() {
     for (const key in actionCooldowns) {
         if (actionCooldowns[key] > 0) actionCooldowns[key]--;
     }
+    
+    for (const key in factionCooldowns) {
+    if (factionCooldowns[key] > 0) factionCooldowns[key]--;
+    }
 
     // TRIGGER DYNAMIC FACTION CHANGE ON CENTRAL AXIS EVENT (WITH SEAT-WEIGHTED AFFINITY & BANNED GUARD)
     const ev = events[currentTurn - 1];
@@ -2572,6 +2687,29 @@ function applyEndOfTurnEconomy() {
         if (factions['other_parties'] && !bannedFactions['other_parties']) {
             factions['other_parties'].affinity = clampFaction('other_parties', factions['other_parties'].affinity - 1.5);
         }
+    }
+
+    // ABRI Alienation & Security Strike, if affinity is low, the soldiers stay in the barracks.
+    const abriAff = factions['abri'] ? factions['abri'].affinity : 50;
+    if (factions['abri'] && !bannedFactions['abri']) {
+        if (!window.wirantoLocked || abriAff < 35) {
+            // Soldiers stay in barracks: riots run wild
+            stats.stab = clampDashboard('stab', stats.stab - 4);
+            // Intelligence failure: without BAIS, Cendana operates freely
+            if (stats.cendana < 80) stats.cendana = clampDashboard('cendana', stats.cendana + 2);
+            // Coup paranoia: provincial governors panic about a military takeover
+            if (factions['utusan_daerah'] && !bannedFactions['utusan_daerah']) {
+                factions['utusan_daerah'].affinity = clampFaction('utusan_daerah', factions['utusan_daerah'].affinity - 2);
+            }
+        } else if (abriAff < 45) {
+            // General uneasiness in the barracks
+            stats.stab = clampDashboard('stab', stats.stab - 2);
+        }
+    }
+
+    if (factions['poros_tengah'] && factions['poros_tengah'].hasMerged && !bannedFactions['poros_tengah']) {
+        // Amien Rais & Gus Dur are actively maneuvering for the top job, loyalty bleeds naturally
+        factions['poros_tengah'].affinity = clampFaction('poros_tengah', factions['poros_tengah'].affinity - 4);
     }
 
     if (passivePC !== 0) {
@@ -3189,18 +3327,18 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
 
     html += '<p><font face="MS Sans Serif" size="2"><b>Delegates Controlled:</b> ' + f.seats + '<br>';
     html += '<b>Current Faction Stance:</b> <font color="' + mood.color + '"><b>' + mood.text + '</b></font><br>';
-    
-    // Specific street temperature indicator for PDI-P, added in Hotfix 1
+
+    // Specific street temperature indicator for PDI-P
     if (factionKey === 'pdip') {
         let streetHTML = '';
         if (f.affinity < 25) {
-            streetHTML = '<font color="#8B0000"><b>Active Riots</b></font> <span style="font-size: 11px; color: #8B0000;"><i>(Red shirts are paralyzing the boulevards)</i></span>';
+            streetHTML = '<font color="#8B0000"><b>Active Riots</b></font> <span style="font-size: 11px; color: #8B0000;"><i>(Red shirts are paralyzing the boulevards; provincial delegates are panicking)</i></span>';
         } else if (f.affinity < 40) {
-            streetHTML = '<font color="#FF4500"><b>Simmering Unrest</b></font> <span style="font-size: 11px; color: #555;"><i>(Satgas units massing at Senayan)</i></span>';
+            streetHTML = '<font color="#FF4500"><b>Simmering Unrest</b></font> <span style="font-size: 11px; color: #555;"><i>(Satgas units massing at Senayan; on the verge of spilling over)</i></span>';
         } else if (f.affinity < 60) {
             streetHTML = '<font color="#B8860B"><b>Guarded Watchfulness</b></font> <span style="font-size: 11px; color: #555;"><i>(Grassroots crowds holding posts, waiting on signals from Kebagusan)</i></span>';
         } else {
-            streetHTML = '<font color="#006400"><b>Standing Down</b></font> <span style="font-size: 11px; color: #555;"></span>';
+            streetHTML = '<font color="#006400"><b>Standing Down</b></font> <span style="font-size: 11px; color: #555;"><i>(Street discipline holds firm; marches paused)</i></span>';
         }
         html += '<b>Street Mobilization:</b> ' + streetHTML + '<br>';
     }
@@ -3277,11 +3415,24 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
             const isSided = !interaction.repeatable && completedInteractions[interaction.id];
             const isLocked = (interaction.mutexGroup && completedInteractions[interaction.mutexGroup] && !isSided) || isLockedByPostSpeech;
 
-            if (isSided || isLocked) {
-                const overlayText = isSided ? "COMMITTED" : "LOCKED";
+            // Usage & cooldown tracking
+            const actionKey = factionKey + ':' + interaction.id;
+            const currentCooldown = (typeof factionCooldowns !== 'undefined' && factionCooldowns[actionKey]) ? factionCooldowns[actionKey] : 0;
+            const timesUsed = (typeof factionUsageCount !== 'undefined' && factionUsageCount[actionKey]) ? factionUsageCount[actionKey] : 0;
+
+            // Akbar blackmail burns out permanently on use #3; Kiemas dinners are permanently dulled after #3
+            const isThreatBurned = (interaction.id === 'golkar_threaten' && timesUsed >= 3);
+            const isKiemasDulled = (interaction.id === 'pdip_kiemas' && timesUsed >= 3);
+
+            if (isSided || isLocked || isThreatBurned) {
+                const overlayText = isThreatBurned ? "BURNED" : (isSided ? "COMMITTED" : "LOCKED");
                 const overlayBg = isSided ? "rgba(0, 160, 0, 0.25)" : "rgba(220, 20, 60, 0.25)";
                 const textColor = isSided ? "rgba(0, 80, 0, 0.9)" : "rgba(139, 0, 0, 0.9)";
                 const flexLetters = overlayText.split('').map(char => `<span>${char}</span>`).join('');
+                
+                const burnedNote = isThreatBurned
+                    ? `<div style="margin-top: 6px; color: #8B0000; font-size: 11px; font-weight: bold;">[Akbar has called your bluff. This avenue of coercion is permanently closed.]</div>`
+                    : '';
                 const postSpeechNote = isLockedByPostSpeech
                     ? `<div style="margin-top: 6px; color: #8B0000; font-size: 11px; font-weight: bold;">[Routine pre-session overtures are closed; only Last-Minute Appeals remain open.]</div>`
                     : '';
@@ -3295,8 +3446,15 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
                     <div style="opacity: 0.65; position: relative; z-index: 1;">
                         <b>${interaction.text}</b> (Cost: ${displayCost} PC)<br><br>
                         <span style="font-weight:normal;">${interaction.description}</span>
+                        ${burnedNote}
                         ${postSpeechNote}
                     </div>
+                </button>`;
+            } else if (currentCooldown > 0) {
+                // Grayed-out cooldown button
+                html += `<button disabled style="opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); text-align: left; margin-bottom: 8px;">
+                    <b>${interaction.text}</b> (Cost: ${displayCost} PC) <span style="color: #8B0000; font-weight: bold; font-size: 10px; margin-left: 5px;">[ON COOLDOWN: ${currentCooldown} TURN(S)]</span><br><br>
+                    <span style="font-weight:normal;">${interaction.description}</span>
                 </button>`;
             } else if (!isConditionMet) {
                 const reasonHtml = failReasons.map(r => `<li style="margin-bottom: 2px;">${r}</li>`).join('');
@@ -3311,10 +3469,11 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
                 const isNew = (interaction.minTurn === currentTurn) || (pastSpeech && isFinalRequest);
                 const btnClass = (isNew && !turnFactionUsed) ? ' class="new-action-btn" onmouseenter="this.classList.remove(\'new-action-btn\')"' : '';
                 const disabledAttr = turnFactionUsed ? 'disabled style="opacity: 0.55; cursor: not-allowed;"' : '';
+                const dulledNotice = isKiemasDulled ? '<br><span style="color: #777; font-size: 11px;">Dinner pleasantries have run their course.</span>' : '';
 
                 html += `<button${btnClass} ${disabledAttr} onclick="executeFactionAction('${factionKey}', '${interaction.id}', ${displayCost})">
                     <b>${interaction.text}</b> (Cost: ${displayCost} PC)<br><br>
-                    <span style="font-weight:normal;">${interaction.description}</span>${effectString}
+                    <span style="font-weight:normal;">${interaction.description}</span>${dulledNotice}${effectString}
                 </button>`;
             }
         });
@@ -3336,13 +3495,16 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
         return;
     }
     if (stats.PC < finalCost) {
-        showCustomAlert(`Insufficient Political Capital to initiate this overture.`, null);
+        showCustomAlert(`Insufficient Political Capital.`, null);
         return;
     }
 
     const f = factions[factionKey];
     const interactionDef = f.interactions.find(i => i.id === interactionId);
     if (!interactionDef) return;
+
+    // Declare alertMsg right at the start so all checks can safely use it!
+    let alertMsg = interactionDef.alertMsg || "Negotiation completed.";
 
     stats.PC = clampPC(stats.PC - finalCost);
     logPCChange(-finalCost, 'faction:' + factionKey + ':' + interactionId);
@@ -3355,12 +3517,41 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
         completedInteractions[interactionDef.mutexGroup] = true;
     }
 
+    // Cooldown & usage tracking
+    const actionKey = factionKey + ':' + interactionId;
+    if (typeof factionUsageCount === 'undefined') window.factionUsageCount = {};
+    if (typeof factionCooldowns === 'undefined') window.factionCooldowns = {};
+    
+    factionUsageCount[actionKey] = (factionUsageCount[actionKey] || 0) + 1;
+    const timesUsed = factionUsageCount[actionKey];
+
+    if (interactionDef.repeatable) {
+        factionCooldowns[actionKey] = 3;
+    }
+
+    // CHECK: Did you cross the line with spammed/coerced interactions?
+    const isLineCrossed = (interactionId === 'golkar_threaten' && timesUsed >= 2) ||
+                          (interactionId === 'pdip_kiemas' && timesUsed >= 2);
+
     let deltaFromLeverage = 0;
-    const leverage = getFactionLeverage(factionKey);
+    // If you crossed the line, leverage is totally dead—no multiplier bonuses!
+    const leverage = isLineCrossed ? { gainMult: 1.0 } : getFactionLeverage(factionKey);
 
     if (interactionDef.effects) {
         const effectsToApply = rollEffectRanges(interactionDef.effects);
-        if (effectsToApply[factionKey] && effectsToApply[factionKey] > 0) {
+
+        // Cancel base positive loyalty gain if Akbar openly mutinies
+        if (interactionId === 'golkar_threaten' && timesUsed >= 3) {
+            delete effectsToApply['golkar_akbar'];
+        }
+
+        // Cancel base positive loyalty gain if Kiemas dinners are permanently dulled
+        if (interactionId === 'pdip_kiemas' && timesUsed >= 3) {
+            delete effectsToApply['pdip'];
+        }
+
+        // Only apply leverage bonuses if you DIDN'T cross the line
+        if (!isLineCrossed && effectsToApply[factionKey] && effectsToApply[factionKey] > 0) {
             const originalVal = effectsToApply[factionKey];
             const modifiedVal = Math.max(1, Math.round(originalVal * leverage.gainMult));
             deltaFromLeverage = modifiedVal - originalVal;
@@ -3369,8 +3560,6 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
         applyEffects(effectsToApply);
     }
 
-    // Hotfix 1
-    // 1 favor = +14, 2 favors = +20, 3 favors = +24, maxes out at +28
     let favorBonus = 0;
     if (isFinalAction && f.favor > 0) {
         favorBonus = Math.min(28, Math.round(Math.sqrt(f.favor) * 14));
@@ -3382,17 +3571,57 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
         stats.mil = Math.round(factions['abri'].affinity);
     }
 
+    // Akbar Tandjung Blackmail Consequences
+    if (interactionId === 'golkar_threaten') {
+        if (timesUsed === 2) {
+            factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 6);
+            stats.stab = clampDashboard('stab', stats.stab - 3);
+            alertMsg = "Akbar Tandjung dismissed further inquiries regarding the Bank Bali files, warning Palace liaisons that continued pressure on Slipi will terminate Golkar's legislative cooperation entirely.<br><br><font color='#FF4500'><b>Akbar's resentment cancels out your negotiating advantage.</b></font>";
+        } else if (timesUsed >= 3) {
+            factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 25);
+            stats.stab = clampDashboard('stab', stats.stab - 8);
+            stats.pop = clampDashboard('pop', stats.pop - 5);
+            // Permanently lock out this action
+            completedInteractions['golkar_threaten'] = true;
+            alertMsg = "<b>[DPP GOLKAR SLIPI PRESS COMMUNIQUÉ]</b><br><br>Akbar Tandjung announced that Golkar will counter executive pressure by demanding an unrestricted parliamentary inquiry into the Bank Bali transactions. Slipi whips have ceased all coordination with government floor managers.<br><br><font color='#8B0000'><b>The dossier threat has backfired completely and can no longer be used.</b></font>";
+        }
+    }
+
+    // Diminishing returns on dining with Taufik Kiemas (PDI-P)
+    if (interactionId === 'pdip_kiemas') {
+        if (timesUsed === 2) {
+            factions['pdip'].affinity = clampFaction('pdip', factions['pdip'].affinity - 2);
+            alertMsg += "<br><br><i>Taufik Kiemas noted that informal discussions cannot substitute for formal power-sharing, and that PDI-P's delegates remain bound to the election results.</i><br><br><font color='#8B0000'><b>Familiarity and empty talk have dulled your bargaining edge.</b></font>";
+        } else if (timesUsed >= 3) {
+            alertMsg = "Taufik Kiemas shared coffee politely, but stated plainly that informal dinners have run their course. PDI-P's delegates remain bound to the election mandate; pleasantries will yield no further loyalty.";
+        }
+    }
+
+    // Central Axis walkout if affinity is too low
+    if (interactionId === 'axis_final_deal') {
+        const axisAff = factions['poros_tengah'].affinity;
+        if (axisAff < 55) {
+            factions['poros_tengah'].affinity = clampFaction('poros_tengah', axisAff - 12);
+            alertMsg = "<font color='#8B0000'><b>AMIEN RAIS WALKS AWAY!</b></font><br><br>Amien Rais announced that the Central Axis has closed negotiations with the Palace and will instruct its delegates to reject the accountability speech, confirming Abdurrahman Wahid as their presidential candidate.<br><br><font color='#8B0000'><b>The Central Axis officially breaks off negotiations to back their own ticket!</b></font>";
+            showCustomAlert(alertMsg, checkAutoAdvanceTurn);
+            return;
+        }
+    }
+
     saveCampaignState();
     updateUI();
 
-    let alertMsg = interactionDef.alertMsg || "Negotiation completed.";
-    if (deltaFromLeverage > 0) {
-        alertMsg += `<br><br><font color="#006400"><b>Your strong bargaining leverage significantly amplified the impact of your overture!</b></font>`;
-    } else if (deltaFromLeverage < 0) {
-        alertMsg += `<br><br><font color="#8B0000"><b>Your weak bargaining leverage blunted the effectiveness of your overture.</b></font>`;
+    // Deletes leverage note if line is crossed
+    if (!isLineCrossed) {
+        if (deltaFromLeverage > 0) {
+            alertMsg += `<br><br><font color="#006400"><b>Your strong bargaining leverage significantly amplified the impact of your overture!</b></font>`;
+        } else if (deltaFromLeverage < 0) {
+            alertMsg += `<br><br><font color="#8B0000"><b>Your weak bargaining leverage blunted the effectiveness of your overture.</b></font>`;
+        }
     }
+
     if (favorBonus > 0) {
-        alertMsg += `<br><br><font color="#0000FF"><b>You called in your past political favors, swaying wavering delegates to your side!</b></font>`;
+        alertMsg += `<br><br><font color="#0000FF"><b>Past political commitments were redeemed during negotiations!</b></font>`;
     }
 
     showCustomAlert(alertMsg, checkAutoAdvanceTurn);
