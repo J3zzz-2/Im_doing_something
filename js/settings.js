@@ -282,7 +282,7 @@ const SETTINGS_ICONS = {
     twitter: `<svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align: -2px; margin-right: 6px;"><path fill="#FFFFFF" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
 };
 
-// SETTINGS > COLOR SCHEME DROPDOWN (custom, so each entry can show its color dot)
+// SETTINGS > COLOR SCHEME DROPDOWN
 (function injectSchemePickerStyles() {
     if (document.getElementById('scheme-picker-css')) return;
     const st = document.createElement('style');
@@ -342,7 +342,6 @@ button.cs-trigger:focus-visible { outline: 1px dotted var(--win95-text); outline
     document.head.appendChild(st);
 })();
 
-// Build the color scheme dropdown (colored dot before every name)
 function renderSchemePicker(disabled) {
     const cur = COLOR_SCHEMES[colorScheme] || { label: colorScheme, swatch: '#C0C0C0' };
     const groups = [['Light', 'light'], ['Dark', 'dark']].map(([title, grp]) => {
@@ -384,7 +383,7 @@ window.toggleSchemeDropdown = function(evt) {
 window.pickColorScheme = function(id) {
     closeSchemeDropdown();
     if (typeof setColorScheme === 'function') setColorScheme(id);
-    // The menu may or may not be re-rendered by setColorScheme; keep the visible choice in sync either way
+    // The menu may or may not be re-rendered by setColorScheme
     const s = COLOR_SCHEMES[id];
     const dot = document.getElementById('cs-dot');
     const label = document.getElementById('cs-label');
