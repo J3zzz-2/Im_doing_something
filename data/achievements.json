@@ -57,7 +57,7 @@
     "id": "win_comfortable",
     "title": "Comfortable Majority",
     "desc": "Win the MPR General Session with a comfortable majority (380+ votes).",
-    "icon": "photo/achv_win_comfortable.png"
+    "icon": "photo/achievements/achv_win_comfortable.png"
   },
   {
     "id": "win_narrow",
