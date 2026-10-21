@@ -1059,8 +1059,8 @@ const FACTION_HISTORICAL_COLORS = {
     'ppp':             { fill: '#2E8B57', border: '#77DDAA', label: 'PPP' },
     'other_parties':   { fill: '#00838F', border: '#66E0EB', label: 'Other Parties' },
     'utusan_daerah':   { fill: '#6E6E6E', border: '#B0B0B0', label: 'U. Daerah' },
-    'golkar_habibie':  { fill: '#D49B00', border: '#FFE066', label: 'Golkar (Loyalists)' },
-    'golkar_akbar':    { fill: '#F1C40F', border: '#FFFF99', label: 'Golkar (Akbar)' },
+    'golkar_habibie':  { fill: '#D49B00', border: '#FFE066', label: 'Golkar (Iramasuka)' },
+    'golkar_akbar':    { fill: '#F1C40F', border: '#FFFF99', label: 'Golkar (DPP Slipi)' },
     'abri':            { fill: '#556B2F', border: '#A3C266', label: 'ABRI' }
 };
 

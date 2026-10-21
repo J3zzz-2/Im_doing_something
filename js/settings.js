@@ -282,6 +282,144 @@ const SETTINGS_ICONS = {
     twitter: `<svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align: -2px; margin-right: 6px;"><path fill="#FFFFFF" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
 };
 
+// SETTINGS > COLOR SCHEME DROPDOWN (custom, so each entry can show its color dot)
+(function injectSchemePickerStyles() {
+    if (document.getElementById('scheme-picker-css')) return;
+    const st = document.createElement('style');
+    st.id = 'scheme-picker-css';
+    st.textContent = `
+.cs-wrap { position: relative; }
+button.cs-trigger {
+    --py: 3px; --px: 6px; --nudge: 0px;
+    display: flex; align-items: center;
+    width: 100%; min-height: 24px; margin: 0;
+    background-color: var(--win95-window);
+    background-image: none;
+    box-shadow: var(--bevel-sunken);
+    border-radius: 0;
+    color: var(--win95-text);
+    filter: none;
+}
+button.cs-trigger:hover:not(:disabled),
+button.cs-trigger:active:not(:disabled) { filter: none; box-shadow: var(--bevel-sunken); }
+button.cs-trigger:disabled { color: var(--win95-text-dim); text-shadow: none; cursor: not-allowed; }
+button.cs-trigger:focus-visible { outline: 1px dotted var(--win95-text); outline-offset: -4px; }
+.cs-arrow {
+    margin-left: auto; flex: 0 0 auto;
+    width: 16px; height: 16px; line-height: 16px;
+    text-align: center; font-size: 8px;
+    background-color: var(--win95-bg);
+    box-shadow: var(--bevel-raised);
+    color: var(--win95-text);
+}
+.cs-list {
+    display: none;
+    position: absolute; left: 0; right: 0; top: 100%;
+    margin-top: 2px; padding: 2px;
+    max-height: 280px; overflow-y: auto;
+    z-index: 60;
+    background-color: var(--win95-window);
+    box-shadow: var(--bevel-sunken), 3px 3px 0 rgba(0, 0, 0, 0.35);
+}
+.cs-wrap.open .cs-list { display: block; }
+.cs-group {
+    font-size: 11px; font-weight: bold;
+    color: var(--win95-text-dim);
+    padding: 4px 6px 2px 6px;
+}
+.cs-item {
+    display: flex; align-items: center;
+    padding: 3px 6px; font-size: 12px;
+    color: var(--win95-text);
+    cursor: pointer;
+}
+.cs-item.is-current { font-weight: bold; }
+.cs-item:hover, .cs-item:focus {
+    background-color: var(--win95-navy);
+    color: #FFFFFF;
+    outline: none;
+}`;
+    document.head.appendChild(st);
+})();
+
+// Build the color scheme dropdown (colored dot before every name)
+function renderSchemePicker(disabled) {
+    const cur = COLOR_SCHEMES[colorScheme] || { label: colorScheme, swatch: '#C0C0C0' };
+    const groups = [['Light', 'light'], ['Dark', 'dark']].map(([title, grp]) => {
+        const items = Object.keys(COLOR_SCHEMES).filter(id => COLOR_SCHEMES[id].group === grp).map(id =>
+            `<div class="cs-item ${colorScheme === id ? 'is-current' : ''}" role="option" tabindex="-1" aria-selected="${colorScheme === id}" data-scheme="${id}" onclick="pickColorScheme('${id}')"><span class="settings-color-dot" style="background-color: ${COLOR_SCHEMES[id].swatch};"></span>${COLOR_SCHEMES[id].label}</div>`
+        ).join('');
+        return `<div class="cs-group">${title}</div>${items}`;
+    }).join('');
+    return `<div class="cs-wrap" id="cs-wrap">
+        <button type="button" class="cs-trigger" id="cs-trigger" aria-haspopup="listbox" aria-expanded="false" ${disabled ? 'disabled' : ''} onclick="toggleSchemeDropdown(event)">
+            <span class="settings-color-dot" id="cs-dot" style="background-color: ${cur.swatch};"></span><span id="cs-label">${cur.label}</span><span class="cs-arrow">&#9660;</span>
+        </button>
+        <div class="cs-list" role="listbox" id="cs-list">${groups}</div>
+    </div>`;
+}
+
+window.closeSchemeDropdown = function() {
+    const w = document.getElementById('cs-wrap');
+    if (!w) return;
+    w.classList.remove('open');
+    const t = document.getElementById('cs-trigger');
+    if (t) t.setAttribute('aria-expanded', 'false');
+};
+
+window.toggleSchemeDropdown = function(evt) {
+    if (evt) evt.stopPropagation();
+    const w = document.getElementById('cs-wrap');
+    if (!w) return;
+    const open = !w.classList.contains('open');
+    w.classList.toggle('open', open);
+    const t = document.getElementById('cs-trigger');
+    if (t) t.setAttribute('aria-expanded', String(open));
+    if (open) {
+        const cur = w.querySelector('.cs-item.is-current') || w.querySelector('.cs-item');
+        if (cur) { cur.focus(); cur.scrollIntoView({ block: 'nearest' }); }
+    }
+};
+
+window.pickColorScheme = function(id) {
+    closeSchemeDropdown();
+    if (typeof setColorScheme === 'function') setColorScheme(id);
+    // The menu may or may not be re-rendered by setColorScheme; keep the visible choice in sync either way
+    const s = COLOR_SCHEMES[id];
+    const dot = document.getElementById('cs-dot');
+    const label = document.getElementById('cs-label');
+    if (s && dot && label) {
+        dot.style.backgroundColor = s.swatch;
+        label.textContent = s.label;
+        document.querySelectorAll('#cs-list .cs-item').forEach(el => {
+            const on = el.getAttribute('data-scheme') === id;
+            el.classList.toggle('is-current', on);
+            el.setAttribute('aria-selected', String(on));
+        });
+    }
+};
+
+// Close on outside click / Escape; arrow keys, Enter and Space work inside the list
+document.addEventListener('click', function(e) {
+    const w = document.getElementById('cs-wrap');
+    if (w && w.classList.contains('open') && !w.contains(e.target)) closeSchemeDropdown();
+});
+document.addEventListener('keydown', function(e) {
+    const w = document.getElementById('cs-wrap');
+    if (!w || !w.classList.contains('open')) return;
+    if (e.key === 'Escape') {
+        closeSchemeDropdown();
+        const t = document.getElementById('cs-trigger');
+        if (t) t.focus();
+        return;
+    }
+    const items = Array.from(w.querySelectorAll('.cs-item'));
+    const i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
+    else if ((e.key === 'Enter' || e.key === ' ') && i >= 0) { e.preventDefault(); pickColorScheme(items[i].getAttribute('data-scheme')); }
+});
+
 // RENDER SETTINGS MENU
 window.showSettingsMenu = function(keepScroll) {
     if (!enterMenuView()) return;
@@ -388,10 +526,7 @@ window.showSettingsMenu = function(keepScroll) {
             </div>
             <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                 <div style="margin-bottom: 6px;">Color Scheme:</div>
-                ${[['Light', 'light'], ['Dark', 'dark']].map(([title, grp]) => `<div class="settings-hint" style="margin: 8px 0 4px 0;"><b>${title}</b></div>
-                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    ${Object.keys(COLOR_SCHEMES).filter(id => COLOR_SCHEMES[id].group === grp).map(id => `<button class="settings-swatch-btn ${colorScheme === id ? 'is-selected' : ''}" ${windowStyle === 'macos8' ? 'disabled' : ''} onclick="setColorScheme('${id}')"><span class="settings-color-dot" style="background-color: ${COLOR_SCHEMES[id].swatch};"></span>${COLOR_SCHEMES[id].label}</button>`).join('')}
-                </div>`).join('')}
+                ${renderSchemePicker(windowStyle === 'macos8')}
                 ${windowStyle === 'macos8' ? `<div class="settings-hint" style="margin-left: 0; margin-top: 6px;">Mac OS 8 keeps its own Platinum gray. Schemes apply to the Windows styles.</div>` : ''}
             </div>
         </div>

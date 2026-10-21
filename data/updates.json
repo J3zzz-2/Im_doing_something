@@ -1,5 +1,24 @@
 [
   {
+  "version": "0.1.3 Hotfix",
+  "date": "October 21, 2026",
+  "title": "Beta 0.1.3 Hotfix",
+  "notes": [
+    "The military now coordinate with the other factions to oust you if you piss them off, they also let people protest and scapegoat minorities.",
+    "PDIP and Central Axis are reluctant to be in the same coalition.",
+    "dissolving seats affect your credibility among the delegates, and they may not appear during the vote.",
+    "Reworked opposition AI (Placeholder for later updates).<ul><li><font color='#ff0000'>There are no popups yet, but Megawati, Rais, and Wiranto is fucking over your administration in the backgrond.</font></li></ul>",
+    "Added placeholder for localisation rework.",
+    "Rewrote faction information to be more concise.",
+    "Changed Golkar loyalist portrait with A.A Baramuli.",
+    "Changed Golkar loyalist name from Irama Tersedak to Irama Suka Nusantara (Irian Jaya, Maluku, Sumatra, Sulawesi, Kalimantan, and Nusa Tenggara).",
+    "Improved some election UI.",
+    "Download Results now show enacted decrees.",
+    "Small rebalancing.",
+    "Decluttered settings by making color schemes be a dropdown."
+  ]
+  },
+  {
   "version": "0.1.2 Hotfix",
   "date": "October 20, 2026",
   "title": "Beta 0.1.2 Hotfix",
