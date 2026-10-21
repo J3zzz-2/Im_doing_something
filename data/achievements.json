@@ -75,7 +75,7 @@
     "id": "lose_decisive",
     "title": "The End of an Era",
     "desc": "Suffer a decisive defeat in the MPR General Session.",
-    "icon": "photo/whoops.png"
+    "icon": "photo/achievements/whoops.png"
   },
   {
     "id": "lose_overwhelming",
@@ -105,7 +105,7 @@
     "id": "et_tu_akbar",
     "title": "Et Tu, Akbar?",
     "desc": "Lose the MPR General Session despite holding 'Ride or Die' loyalty with your Golkar Loyalists because Akbar Tandjung's Golkar faction abandoned you.",
-    "icon": "photo/whoops.png"
+    "icon": "photo/achievements/whoops.png"
   },
   {
     "id": "baligate_clean",
@@ -135,7 +135,7 @@
     "id": "deja_vu_322",
     "title": "355 to 322: Historical Déjà Vu",
     "desc": "Lose the MPR General Session with almost the exact tally of Habibie's real-life 322–355 rejection on the night of October 19–20, 1999.",
-    "icon": "photo/achv_lose_decisive.png"
+    "icon": "photo/achievements/achv_lose_decisive.png"
   },
   {
     "id": "gus_dur_twist",
