@@ -208,5 +208,23 @@
     "title": "The Rainbow Coalition",
     "desc": "Proclaim a government of national unity with PDI-P, Golkar, Central Axis, and ABRI.",
     "icon": "photo/achievements/megabibie.png"
+  },
+  {
+    "id": "crisis_survivor",
+    "title": "Unconstitutional, Apparently",
+    "desc": "Abolish ABRI's 38 MPR seats by emergency decree, survive the constitutional crisis that follows, and still win the MPR General Session.",
+    "icon": "photo/achievements/dwifungsi.png"
+  },
+  {
+    "id": "under_siege",
+    "title": "Nobody Answers at Cilangkap",
+    "desc": "Endure twelve or more incidents of military or Cendana-backed sabotage in a single campaign, and still win the MPR General Session.",
+    "icon": "photo/achievements/suhartodead.png"
+  },
+  {
+    "id": "odd_bedfellows",
+    "title": "The Enemy of My Enemy",
+    "desc": "Win the MPR General Session with both PDI-P and the Central Axis firmly behind you, despite their rivalry.",
+    "icon": "photo/achievements/megabibie.png"
   }
 ]

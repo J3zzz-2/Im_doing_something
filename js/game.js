@@ -74,19 +74,12 @@ function deepClone(obj) {
 
 // Compute a faction's leverage over the president from its metrics
 function getFactionLeverage(factionKey) {
-    const metrics = FACTION_LEVERAGE_METRICS[factionKey];
-
-    if (factionKey === 'poros_tengah' && factions['poros_tengah'] && factions['poros_tengah'].hasMerged) {
-        return {
-            val: 90,
-            text: "Kingmaker Extortion",
-            desc: "Commanding 163 seats, the Axis demands astronomical concessions to back an incumbent",
-            color: "#8B0000",
-            costMult: 1.55,   // Everything costs 55% more PC
-            gainMult: 0.70    // Harder to move their loyalty needle
-        };
+    if (window.OppositionEngine) {
+        const override = OppositionEngine.getLeverageOverride(factionKey);
+        if (override) return override;
     }
 
+    const metrics = FACTION_LEVERAGE_METRICS[factionKey];
     if (!metrics) {
         return {
             val: 50,
@@ -194,64 +187,13 @@ function getPlainStatTierName(statKey, val) {
     return statTiers[statTiers.length - 1].text;
 }
 
-// Hotfix 0.1.2: Increase betrayal
 function getNationalBetrayalPressure() {
-    let pressure = 0;
-
-    // 1. Street Unrest: If riots are raging, delegates panic about backing a dead man
-    if (stats.stab < 25) pressure += 12;
-    else if (stats.stab < 45) pressure += 6;
-    else if (stats.stab >= 70) pressure -= 6; // Peace makes delegates feel safe backing you
-
-    // 2. Tanking Economy: If the rupiah is crashing, technocrat credibility evaporates
-    if (stats.econ < 25) pressure += 10;
-    else if (stats.econ < 45) pressure += 5;
-    else if (stats.econ >= 70) pressure -= 5;
-
-    // 3. Cendana Briefcases: Shadow cash moving through Hotel Mulia buying defectors
-    if (stats.cendana >= 80) pressure += 10;
-    else if (stats.cendana >= 60) pressure += 5;
-    else if (stats.cendana <= 30) pressure -= 6;
-
-    // 4. Public Hatred: If the public hates you, voting "Accept" is suicide back home
-    if (stats.pop < 30) pressure += 8;
-    else if (stats.pop < 45) pressure += 4;
-
-    // 5. Reformasi Betrayal: Looking like New Order 2.0 alienates moderates
-    if (stats.ref < 30) pressure += 8;
-    else if (stats.ref < 45) pressure += 4;
-
-    return Math.max(0, pressure);
+    return window.OppositionEngine ? OppositionEngine.getBetrayalPressure() : 0;
 }
 
 function getFactionDefectionRate(key, effAff) {
-    // Ride-or-die loyalists almost never defect
-    if (key === 'golkar_habibie') return 0.02;
-
-    const pressure = getNationalBetrayalPressure(); // ranges roughly 0 to 40+
-    
-    // Faction susceptibility modifiers (some parties are way snake-ier than others)
-    let susceptibility = 1.0;
-    if (key === 'golkar_akbar') susceptibility = 1.4;    // Akbar's "Golkar Putih" dissidents love backstabbing
-    if (key === 'utusan_daerah') susceptibility = 1.25;  // Regional delegates blow with the financial wind
-    if (key === 'poros_tengah') susceptibility = 1.3;   // Amien & Gus Dur delegates look for any excuse to take power
-    if (key === 'other_parties') susceptibility = 1.2;   // Small fish get bought out easily
-    if (key === 'abri' && window.wirantoLocked) susceptibility = 0.5; // Military discipline holds unless broken
-
-    // Ironclad supporters (85+) barely defect; fence-sitters (35-70) bleed heavily in secret
-    let loyaltyShield = 1.0;
-    if (effAff >= 85) loyaltyShield = 0.15;
-    else if (effAff >= 70) loyaltyShield = 0.45;
-    else if (effAff >= 50) loyaltyShield = 0.85;
-    else loyaltyShield = 1.2;
-
-    // Jitter: human chaos behind the curtain (adds a tiny ±3% RNG)
-    const jitter = ((Math.random() * 6) - 3) / 100;
-
-    const baseDefection = (pressure * 0.008) * susceptibility * loyaltyShield;
-    return Math.max(0, Math.min(0.50, baseDefection + jitter)); // max 50% can defect in secret
+    return window.OppositionEngine ? OppositionEngine.getDefectionRate(key, effAff) : 0;
 }
-
 // Estimated vote margin over the majority mark (the real vote's model without variance); null before the Assembly convenes
 function getWhipMargin() {
     if (!gameStarted) return null;
@@ -270,7 +212,8 @@ function getWhipMargin() {
 
         activeTotalSeats += f.seats;
         const favorBonus = (f.favor || 0) * 8;
-        const effAff = clampFaction(key, f.affinity + favorBonus + stabilityFloorMod - cendanaSabotage);
+        const advAdj = window.AdversaryEngine ? AdversaryEngine.affinityAdjust(key) : 0;
+        const effAff = clampFaction(key, f.affinity + favorBonus + stabilityFloorMod - cendanaSabotage + advAdj);
 
         let baselineTurnout = 0;
         if (key === 'pdip' || key === 'poros_tengah' || key === 'abri') {
@@ -287,6 +230,7 @@ function getWhipMargin() {
         const actualVoteRate = Math.max(0, baselineTurnout - defectionRate);
 
         estVotes += f.seats * actualVoteRate;
+        if (window.AdversaryEngine) estVotes -= AdversaryEngine.taintLoss(key, actualVoteRate);
     }
 
     const majorityMark = Math.floor(activeTotalSeats / 2) + 1;
@@ -630,7 +574,7 @@ async function loadLocalizedAssets(onStepProgress) {
 
     const [
         cfgData, achvData, evData, routData, decData,
-        tutData, histData, libData, persData, stData, credData, updData,
+        tutData, histData, libData, persData, stData, credData, updData, advData,
         ...factionResults
     ] = await Promise.all([
         trackedFetch('config.json', fallbackConfig),
@@ -645,6 +589,7 @@ async function loadLocalizedAssets(onStepProgress) {
         trackedFetch('stats.json', {}),
         trackedFetch('credits.json', {}),
         trackedFetch('updates.json', null),
+        fetchJSONSafe('data/language/english/opposition.json', null).then(res => { step(); return res; }),
         ...INITIAL_PORTRAIT_FACTIONS.map(key => trackedFetch(`fraksi/${key}.json`, null))
     ]);
 
@@ -722,7 +667,10 @@ async function loadLocalizedAssets(onStepProgress) {
     dashboardStats = stData || {};
     creditsData = credData || {};
     updatesData = updData || null;
+    window.advTextData = advData || null;   // opposition moves + historical background news (adversaries.js)
     lastRenderedPortraitSignature = "";
+    window.oppLocData = advData || null;
+    window.advTextData = advData || null;
 }
 
 // Preload and decode every referenced image behind the loading screen
@@ -767,7 +715,7 @@ async function preloadAllAssetsWithWin95Modal(titleOverride) {
     };
 
     // STAGE 1: Load all JSON data files (0% -> 25% of progress bar)
-    const totalJsonCount = 12 + INITIAL_PORTRAIT_FACTIONS.length + 1;
+    const totalJsonCount = 13 + INITIAL_PORTRAIT_FACTIONS.length + 1;
     let loadedJsonCount = 0;
     const onJsonStep = () => {
         loadedJsonCount++;
@@ -1461,69 +1409,20 @@ window.showPCLog = function() {
     console.table(byTurn);
 };
 
-// Unified helper to apply military/ABRI changes while respecting & straining the Wiranto Lock
 function applyMilitaryDelta(delta) {
-    if (!factions['abri'] || !delta) return;
-
-    if (window.wirantoLocked) {
-        // CASE 1: One catastrophic blow (delta <= -15)
-        if (delta <= -15) {
-            window.wirantoLocked = false;
-            const totalDrop = delta + window.wirantoStrain;
-            window.wirantoStrain = 0;
-            factions['abri'].affinity = clampFaction('abri', factions['abri'].affinity + totalDrop);
-
-            // The Palace loses security control
-            stats.stab = clampDashboard('stab', stats.stab - 8);
-            if (factions['golkar_akbar']) {
-                factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 8);
-            }
-
-            if (typeof showCustomAlert === 'function') {
-                showCustomAlert("<font color='#8B0000'><b>CILANGKAP PACT BROKEN!</b></font><br>General Wiranto has formally terminated operational consultations with Merdeka Palace. Military liaison officers have vacated Bina Graha, territorial commands are confined to barracks, and civilian riot-control requests are no longer being acknowledged.", null);
-            }
-
-        // CASE 2: Negative delta that strains Wiranto's patience
-        } else if (delta < 0) {
-            window.wirantoStrain += delta;
-
-            // Cumulative strain reaches the breaking point (-20 strain)
-            if (window.wirantoStrain <= -20) {
-                window.wirantoLocked = false;
-                factions['abri'].affinity = clampFaction('abri', 50 + window.wirantoStrain);
-                window.wirantoStrain = 0;
-
-                // Slow-burn betrayal finally snaps
-                stats.stab = clampDashboard('stab', stats.stab - 8);
-                if (factions['golkar_akbar']) {
-                    factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 8);
-                }
-
-                if (typeof showCustomAlert === 'function') {
-                    showCustomAlert("<font color='#8B0000'><b>CILANGKAP PACT COLLAPSED!</b></font><br><br>Armed forces headquarters has quietly suspended its working arrangement with the Palace. Regional commands have been instructed to hold in place, and military delegates in Senayan have ceased coordinating with government floor managers.", null);
-                }
-            } else {
-                // Pact still holds, but strain accumulates; affinity stays clamped at 50 floor
-                factions['abri'].affinity = Math.max(50, clampFaction('abri', factions['abri'].affinity + delta));
-            }
-
-        // CASE 3: Positive delta heals accumulated strain
-        } else {
-            window.wirantoStrain = Math.min(0, window.wirantoStrain + Math.round(delta * 0.5));
-            factions['abri'].affinity = clampFaction('abri', Math.max(50, factions['abri'].affinity + delta));
-        }
-
-    // CASE 4: The lock is already broken; ABRI affinity rises and falls freely
-    } else {
-        factions['abri'].affinity = clampFaction('abri', factions['abri'].affinity + delta);
+    if (window.OppositionEngine) {
+        OppositionEngine.applyMilitaryDelta(delta);
+        return;
     }
-
+    if (!factions['abri'] || !delta) return;
+    factions['abri'].affinity = clampFaction('abri', factions['abri'].affinity + delta);
     stats.mil = Math.round(factions['abri'].affinity);
 }
 
 // Apply an effects object to stats and factions
 function applyEffects(eff, updateSnapshot = true) {
     if (!eff) return;
+    const advSnap = window.AdversaryEngine ? AdversaryEngine.beforeEffects() : null;
     if (updateSnapshot) prevStatsSnapshot = { ...stats };
     eff = rollEffectRanges(eff);
 
@@ -1559,6 +1458,7 @@ function applyEffects(eff, updateSnapshot = true) {
     if (factions['abri']) {
         stats.mil = Math.round(factions['abri'].affinity);
     }
+    if (advSnap) AdversaryEngine.afterEffects(advSnap);
 }
 
 // Show the credits screen
@@ -2162,6 +2062,7 @@ window.startGame = function() {
     timorPromiseSteps = {};
     sp3UpheldWithHighCendana = false;
     helpedRaisSpeaker = false;
+    if (window.AdversaryEngine) AdversaryEngine.reset();
 
     gameStarted = true;
     syncSidebarVisibility();
@@ -2285,6 +2186,7 @@ function isDecreeEventUnlocked(decree) {
 // Check a decree's faction-loyalty requirements, waiving factions that were banned or merged away
 function getDecreeFactionReqFailures(decree) {
     const fails = [];
+    if (window.AdversaryEngine) AdversaryEngine.getDecreeGateFailures(decree).forEach(r => fails.push(r));
     if (!decree || !Array.isArray(decree.reqFactions)) return fails;
     decree.reqFactions.forEach(req => {
         const f = factions[req.key];
@@ -2434,12 +2336,7 @@ function getPreVoteFactionStanceHTML() {
         }
     }
 
-    let cendanaNote = "";
-    if (stats.cendana >= 70) {
-        cendanaNote = `<div style="margin-top: 6px; color: #8B0000; font-weight: bold;">&#9888; Emissaries from Jalan Cendana are moving through the Hotel Mulia suites with briefcases, actively tempting wavering delegates to defect behind the secret-ballot curtain.</div>`;
-    } else if (stats.cendana <= 30) {
-        cendanaNote = `<div style="margin-top: 6px; color: #006400; font-weight: bold;">&#10003;    With Jalan Cendana's patronage network crippled, old-guard financiers lack the reach to subvert our delegates tonight.</div>`;
-    }
+    const cendanaNote = window.OppositionEngine ? OppositionEngine.getCendanaWhipNoteHTML() : "";
 
     return `<div class="pre-vote-whip-box">
         <div class="music-header">Senayan Floor Assessment</div>
@@ -2596,37 +2493,42 @@ window.resolveEvent = function(optIndex) {
     if (!option) return;
     window.resolvedEventTurn = currentTurn;
 
+    // Hostile army: peaceful Timor / Aceh options backfire (see adversaries.js)
+    const advHook = window.AdversaryEngine ? AdversaryEngine.onEventChoice(ev, optIndex, option) : null;
+    const advSabotaged = Boolean(advHook && advHook.sabotaged);
+    const advReaction = (option.reaction || '') + (advHook ? advHook.suffix : '');
+
     // Track specific historical choices for achievements
     if (ev.id === 'ev_bank_bali' && optIndex === 0) bankBaliCleanSteps.frozeEGP = true;
     if (ev.id === 'ev_imf_ultimatum' && optIndex === 0) bankBaliCleanSteps.pwcAccess = true;
     if (ev.id === 'ev_imf_ultimatum' && optIndex === 4) bankBaliCleanSteps.defiedIMF = true;
     if (ev.id === 'ev_pwc_audit' && optIndex === 0) bankBaliCleanSteps.declassifiedPwC = true;
 
-    if (ev.id === 'ev_referendum_countdown' && optIndex === 0) timorPromiseSteps.countdown = true;
-    if (ev.id === 'ev_timor_votes' && optIndex === 0) timorPromiseSteps.votes = true;
-    if (ev.id === 'ev_peacekeeper_decision' && (optIndex === 0 || optIndex === 1)) timorPromiseSteps.peacekeepers = true;
+    if (!advSabotaged && ev.id === 'ev_referendum_countdown' && optIndex === 0) timorPromiseSteps.countdown = true;
+    if (!advSabotaged && ev.id === 'ev_timor_votes' && optIndex === 0) timorPromiseSteps.votes = true;
+    if (!advSabotaged && ev.id === 'ev_peacekeeper_decision' && (optIndex === 0 || optIndex === 1)) timorPromiseSteps.peacekeepers = true;
 
     if (ev.id === 'ev_assembly_convenes' && optIndex === 0) helpedRaisSpeaker = true;
     if (ev.id === 'ev_suharto_probe' && optIndex === 1 && stats.cendana >= 80) {
         sp3UpheldWithHighCendana = true;
     }
 
-    applyEffects(option.effects);
+    applyEffects(advSabotaged ? advHook.effects : option.effects);
     updateUI();
 
     if (currentTurn >= events.length) {
-        showCustomAlert(option.reaction, () => {
+        showCustomAlert(advReaction, () => {
             currentTurn++;
             runElection();
         });
     } else {
         isActionPhase = true;
         saveCampaignState();
-        showCustomAlert(option.reaction, showActionMenu);
+        showCustomAlert(advReaction, showActionMenu);
     }
+    if (window.AdversaryEngine) AdversaryEngine.flushPopups();
 };
 
-// COMPOUNDING MALUS, BONUS & PASSIVE PC LEDGER SYSTEM
 function applyEndOfTurnEconomy() {
     const mods = gameConfig.systemModifiers;
     const diffDef = gameConfig.difficultySettings[selectedDifficulty];
@@ -2664,52 +2566,12 @@ function applyEndOfTurnEconomy() {
         passivePC -= Math.min(3, Math.ceil((35 - govStability) / 8));
     }
 
-    if (stats.cendana >= 75) {
-        passivePC += (stats.cendana >= 90 ? -3 : -2);
-    } else if (stats.cendana <= 30) {
-        passivePC += 2;
-    }
-
     if (factions['golkar_habibie'] && !bannedFactions['golkar_habibie']) {
         if (factions['golkar_habibie'].affinity >= 70) {
             passivePC += 2;
         } else if (factions['golkar_habibie'].affinity < 40) {
             passivePC -= 1;
         }
-    }
-
-    // Hotfix 1: PDI-P street rage if ignored
-    if (factions['pdip'] && !bannedFactions['pdip'] && factions['pdip'].affinity < 25) {
-        stats.stab = clampDashboard('stab', stats.stab - 3);
-        if (factions['utusan_daerah'] && !bannedFactions['utusan_daerah']) {
-            factions['utusan_daerah'].affinity = clampFaction('utusan_daerah', factions['utusan_daerah'].affinity - 1.5);
-        }
-        if (factions['other_parties'] && !bannedFactions['other_parties']) {
-            factions['other_parties'].affinity = clampFaction('other_parties', factions['other_parties'].affinity - 1.5);
-        }
-    }
-
-    // ABRI Alienation & Security Strike, if affinity is low, the soldiers stay in the barracks.
-    const abriAff = factions['abri'] ? factions['abri'].affinity : 50;
-    if (factions['abri'] && !bannedFactions['abri']) {
-        if (!window.wirantoLocked || abriAff < 35) {
-            // Soldiers stay in barracks: riots run wild
-            stats.stab = clampDashboard('stab', stats.stab - 4);
-            // Intelligence failure: without BAIS, Cendana operates freely
-            if (stats.cendana < 80) stats.cendana = clampDashboard('cendana', stats.cendana + 2);
-            // Coup paranoia: provincial governors panic about a military takeover
-            if (factions['utusan_daerah'] && !bannedFactions['utusan_daerah']) {
-                factions['utusan_daerah'].affinity = clampFaction('utusan_daerah', factions['utusan_daerah'].affinity - 2);
-            }
-        } else if (abriAff < 45) {
-            // General uneasiness in the barracks
-            stats.stab = clampDashboard('stab', stats.stab - 2);
-        }
-    }
-
-    if (factions['poros_tengah'] && factions['poros_tengah'].hasMerged && !bannedFactions['poros_tengah']) {
-        // Amien Rais & Gus Dur are actively maneuvering for the top job, loyalty bleeds naturally
-        factions['poros_tengah'].affinity = clampFaction('poros_tengah', factions['poros_tengah'].affinity - 4);
     }
 
     if (passivePC !== 0) {
@@ -2735,16 +2597,6 @@ function applyEndOfTurnEconomy() {
     if (stats.ref <= 20) {
         stats.stab = clampDashboard('stab', stats.stab - 2);
         stats.pop = clampDashboard('pop', stats.pop - 1);
-    }
-
-    if (stats.cendana >= 75) {
-        stats.ref = clampDashboard('ref', stats.ref - 1);
-        if (factions['golkar_akbar'] && !bannedFactions['golkar_akbar']) {
-            factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity + 1);
-        }
-        if (factions['golkar_habibie'] && !bannedFactions['golkar_habibie']) {
-            factions['golkar_habibie'].affinity = clampFaction('golkar_habibie', factions['golkar_habibie'].affinity - 1);
-        }
     }
 
     let popDriftMod = 0;
@@ -2775,24 +2627,9 @@ function applyEndOfTurnEconomy() {
         }
     });
 
-    if (stats.cendana < 50 && !activeDecrees['anti_corruption'] && !activeDecrees['imf_bulog_deregulation'] && !activeDecrees['suharto_asset_seizure_tribunal']) {
-        stats.cendana = clampDashboard('cendana', stats.cendana + 1);
-    }
-
     if (factions['abri']) {
         stats.mil = Math.round(factions['abri'].affinity);
     }
-
-    // Hotfix 1: Cendana counter-strike check
-    const cendanaDrop = (window.lastTurnCendana || stats.cendana) - stats.cendana;
-    if (cendanaDrop >= 12) {
-        stats.econ = clampDashboard('econ', stats.econ - 4);
-        stats.stab = clampDashboard('stab', stats.stab - 4);
-        if (factions['golkar_akbar']) {
-            factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 5);
-        }
-    }
-    window.lastTurnCendana = stats.cendana;
 
     return { pcPenalty: pcPenalty, passivePC: passivePC };
 }
@@ -2890,27 +2727,7 @@ window.showActionMenu = function(preserveScroll = false) {
         authorityLine = `<span style="color: #B8860B; cursor: help; border-bottom: 1px dotted #B8860B;" title="${authorityTip}" onclick="showMobileTooltipNote(this.title)">Whispers of doubt are beginning to slow the bureaucracy.</span>`;
     }
 
-    let abriTip = "You crossed Cilangkap's red lines. General Wiranto's neutrality guarantee is gone, and ABRI's delegates now vote purely on their remaining goodwill.";
-    let abriLine = `<span style="color: #8B0000; font-weight: bold; cursor: help; border-bottom: 1px dotted #8B0000;" title="${abriTip}" onclick="showMobileTooltipNote(this.title)">Our political arrangement with General Wiranto has collapsed.</span>`;
-    if (bannedFactions['abri']) {
-        abriTip = "ABRI's reserved seats in the MPR have been abolished by presidential decree.";
-        abriLine = `<span style="color: #666666; font-weight: bold; cursor: help; border-bottom: 1px dotted #666666;" title="${abriTip}" onclick="showMobileTooltipNote(this.title)">The military's parliamentary bloc has been dissolved.</span>`;
-    } else if (window.wirantoLocked) {
-        const s = Math.abs(window.wirantoStrain || 0);
-        if (s === 0) {
-            abriTip = "General Wiranto is keeping the armed forces accommodating so long as military red lines are respected.";
-            abriLine = `<span style="color: #006400; cursor: help; border-bottom: 1px dotted #006400;" title="${abriTip}" onclick="showMobileTooltipNote(this.title)">Cilangkap's accommodation with the Palace is holding firm.</span>`;
-        } else if (s <= 6) {
-            abriTip = "The generals are uneasy over recent civilian concessions, though Wiranto's accommodation still holds.";
-            abriLine = `<span style="color: #4682B4; cursor: help; border-bottom: 1px dotted #4682B4;" title="${abriTip}" onclick="showMobileTooltipNote(this.title)">The generals in Cilangkap are uneasy, though our arrangement holds.</span>`;
-        } else if (s <= 13) {
-            abriTip = "Repeated friction with the military has strained Wiranto's patience; another major slight could shatter the pact.";
-            abriLine = `<span style="color: #FF8C00; font-weight: bold; cursor: help; border-bottom: 1px dotted #FF8C00;" title="${abriTip}" onclick="showMobileTooltipNote(this.title)">Our understanding with General Wiranto is visibly strained.</span>`;
-        } else {
-            abriTip = "The officer corps is on the verge of open defiance; one more blow against military interests will permanently break the pact.";
-            abriLine = `<span style="color: #8B0000; font-weight: bold; cursor: help; border-bottom: 1px dotted #8B0000;" title="${abriTip}" onclick="showMobileTooltipNote(this.title)">Our arrangement with Cilangkap is near its breaking point.</span>`;
-        }
-    }
+    const abriLine = window.OppositionEngine ? OppositionEngine.getMilitaryStatusLineHTML() : '';
 
     html += `<div style="background-color: #E0DFE3; border: 2px inset #FFFFFF; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; line-height: 1.65;">
         • ${execLine}<br>
@@ -2920,6 +2737,8 @@ window.showActionMenu = function(preserveScroll = false) {
         • ${abriLine}
         <div id="mobile-status-tooltip-box" class="mobile-tooltip-readout"></div>
     </div>`;
+
+   // if (window.AdversaryEngine) html += AdversaryEngine.renderNewsPanel();   // Recent News: opposition moves + background events
 
     const routineImg = (gameConfig && gameConfig.routineActionsImage) ? gameConfig.routineActionsImage : 'photo/routine.png';
     const decreesImg = (gameConfig && gameConfig.decreesImage) ? gameConfig.decreesImage : 'photo/decree.png';
@@ -2988,6 +2807,7 @@ window.showActionMenu = function(preserveScroll = false) {
 // End the action phase and advance the turn
 window.finishActionPhase = function() {
     applyEndOfTurnEconomy();
+    if (window.AdversaryEngine) AdversaryEngine.onEndOfTurn();
     updateUI();
     nextTurn();
 };
@@ -3328,19 +3148,8 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
     html += '<p><font face="MS Sans Serif" size="2"><b>Delegates Controlled:</b> ' + f.seats + '<br>';
     html += '<b>Current Faction Stance:</b> <font color="' + mood.color + '"><b>' + mood.text + '</b></font><br>';
 
-    // Specific street temperature indicator for PDI-P
-    if (factionKey === 'pdip') {
-        let streetHTML = '';
-        if (f.affinity < 25) {
-            streetHTML = '<font color="#8B0000"><b>Active Riots</b></font> <span style="font-size: 11px; color: #8B0000;"><i>(Red shirts are paralyzing the boulevards; provincial delegates are panicking)</i></span>';
-        } else if (f.affinity < 40) {
-            streetHTML = '<font color="#FF4500"><b>Simmering Unrest</b></font> <span style="font-size: 11px; color: #555;"><i>(Satgas units massing at Senayan; on the verge of spilling over)</i></span>';
-        } else if (f.affinity < 60) {
-            streetHTML = '<font color="#B8860B"><b>Guarded Watchfulness</b></font> <span style="font-size: 11px; color: #555;"><i>(Grassroots crowds holding posts, waiting on signals from Kebagusan)</i></span>';
-        } else {
-            streetHTML = '<font color="#006400"><b>Standing Down</b></font> <span style="font-size: 11px; color: #555;"><i>(Street discipline holds firm; marches paused)</i></span>';
-        }
-        html += '<b>Street Mobilization:</b> ' + streetHTML + '<br>';
+    if (factionKey === 'pdip' && window.OppositionEngine) {
+        html += OppositionEngine.getPdipStreetStatusHTML(f.affinity);
     }
 
     html += '<b>Bargaining Leverage:</b> <font color="' + leverage.color + '"><b>' + leverage.text + '</b></font> <i>(' + leverage.desc + ')</i><br>';
@@ -3420,9 +3229,11 @@ window.openFactionMenu = function(factionKey, preserveScroll = false) {
             const currentCooldown = (typeof factionCooldowns !== 'undefined' && factionCooldowns[actionKey]) ? factionCooldowns[actionKey] : 0;
             const timesUsed = (typeof factionUsageCount !== 'undefined' && factionUsageCount[actionKey]) ? factionUsageCount[actionKey] : 0;
 
-            // Akbar blackmail burns out permanently on use #3; Kiemas dinners are permanently dulled after #3
-            const isThreatBurned = (interaction.id === 'golkar_threaten' && timesUsed >= 3);
-            const isKiemasDulled = (interaction.id === 'pdip_kiemas' && timesUsed >= 3);
+            const oppCheck = window.OppositionEngine
+                    ? OppositionEngine.evaluateFactionInteraction(factionKey, interaction.id, timesUsed)
+                    : { isThreatBurned: false, isKiemasDulled: false };
+            const isThreatBurned = oppCheck.isThreatBurned;
+            const isKiemasDulled = oppCheck.isKiemasDulled;
 
             if (isSided || isLocked || isThreatBurned) {
                 const overlayText = isThreatBurned ? "BURNED" : (isSided ? "COMMITTED" : "LOCKED");
@@ -3521,7 +3332,7 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
     const actionKey = factionKey + ':' + interactionId;
     if (typeof factionUsageCount === 'undefined') window.factionUsageCount = {};
     if (typeof factionCooldowns === 'undefined') window.factionCooldowns = {};
-    
+
     factionUsageCount[actionKey] = (factionUsageCount[actionKey] || 0) + 1;
     const timesUsed = factionUsageCount[actionKey];
 
@@ -3529,28 +3340,31 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
         factionCooldowns[actionKey] = 3;
     }
 
-    // CHECK: Did you cross the line with spammed/coerced interactions?
-    const isLineCrossed = (interactionId === 'golkar_threaten' && timesUsed >= 2) ||
-                          (interactionId === 'pdip_kiemas' && timesUsed >= 2);
+    // Evaluate opposition pushback / coercion limits via OppositionEngine
+    const oppEval = window.OppositionEngine
+        ? OppositionEngine.evaluateFactionInteraction(factionKey, interactionId, timesUsed)
+        : {
+            isThreatBurned: false,
+            isKiemasDulled: false,
+            suppressLeverage: false,
+            cancelFactionGain: false,
+            overrideAlertMsg: null,
+            appendAlertMsg: null,
+            abortTurnAdvance: false
+        };
+
+    const isLineCrossed = Boolean(oppEval.suppressLeverage);
 
     let deltaFromLeverage = 0;
-    // If you crossed the line, leverage is totally dead—no multiplier bonuses!
     const leverage = isLineCrossed ? { gainMult: 1.0 } : getFactionLeverage(factionKey);
 
     if (interactionDef.effects) {
         const effectsToApply = rollEffectRanges(interactionDef.effects);
 
-        // Cancel base positive loyalty gain if Akbar openly mutinies
-        if (interactionId === 'golkar_threaten' && timesUsed >= 3) {
-            delete effectsToApply['golkar_akbar'];
+        if (oppEval.cancelFactionGain) {
+            delete effectsToApply[factionKey];
         }
 
-        // Cancel base positive loyalty gain if Kiemas dinners are permanently dulled
-        if (interactionId === 'pdip_kiemas' && timesUsed >= 3) {
-            delete effectsToApply['pdip'];
-        }
-
-        // Only apply leverage bonuses if you DIDN'T cross the line
         if (!isLineCrossed && effectsToApply[factionKey] && effectsToApply[factionKey] > 0) {
             const originalVal = effectsToApply[factionKey];
             const modifiedVal = Math.max(1, Math.round(originalVal * leverage.gainMult));
@@ -3571,45 +3385,21 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
         stats.mil = Math.round(factions['abri'].affinity);
     }
 
-    // Akbar Tandjung Blackmail Consequences
-    if (interactionId === 'golkar_threaten') {
-        if (timesUsed === 2) {
-            factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 6);
-            stats.stab = clampDashboard('stab', stats.stab - 3);
-            alertMsg = "Akbar Tandjung dismissed further inquiries regarding the Bank Bali files, warning Palace liaisons that continued pressure on Slipi will terminate Golkar's legislative cooperation entirely.<br><br><font color='#FF4500'><b>Akbar's resentment cancels out your negotiating advantage.</b></font>";
-        } else if (timesUsed >= 3) {
-            factions['golkar_akbar'].affinity = clampFaction('golkar_akbar', factions['golkar_akbar'].affinity - 25);
-            stats.stab = clampDashboard('stab', stats.stab - 8);
-            stats.pop = clampDashboard('pop', stats.pop - 5);
-            // Permanently lock out this action
-            completedInteractions['golkar_threaten'] = true;
-            alertMsg = "<b>[DPP GOLKAR SLIPI PRESS COMMUNIQUÉ]</b><br><br>Akbar Tandjung announced that Golkar will counter executive pressure by demanding an unrestricted parliamentary inquiry into the Bank Bali transactions. Slipi whips have ceased all coordination with government floor managers.<br><br><font color='#8B0000'><b>The dossier threat has backfired completely and can no longer be used.</b></font>";
-        }
+    if (oppEval.overrideAlertMsg) {
+        alertMsg = oppEval.overrideAlertMsg;
     }
-
-    // Diminishing returns on dining with Taufik Kiemas (PDI-P)
-    if (interactionId === 'pdip_kiemas') {
-        if (timesUsed === 2) {
-            factions['pdip'].affinity = clampFaction('pdip', factions['pdip'].affinity - 2);
-            alertMsg += "<br><br><i>Taufik Kiemas noted that informal discussions cannot substitute for formal power-sharing, and that PDI-P's delegates remain bound to the election results.</i><br><br><font color='#8B0000'><b>Familiarity and empty talk have dulled your bargaining edge.</b></font>";
-        } else if (timesUsed >= 3) {
-            alertMsg = "Taufik Kiemas shared coffee politely, but stated plainly that informal dinners have run their course. PDI-P's delegates remain bound to the election mandate; pleasantries will yield no further loyalty.";
-        }
-    }
-
-    // Central Axis walkout if affinity is too low
-    if (interactionId === 'axis_final_deal') {
-        const axisAff = factions['poros_tengah'].affinity;
-        if (axisAff < 55) {
-            factions['poros_tengah'].affinity = clampFaction('poros_tengah', axisAff - 12);
-            alertMsg = "<font color='#8B0000'><b>AMIEN RAIS WALKS AWAY!</b></font><br><br>Amien Rais announced that the Central Axis has closed negotiations with the Palace and will instruct its delegates to reject the accountability speech, confirming Abdurrahman Wahid as their presidential candidate.<br><br><font color='#8B0000'><b>The Central Axis officially breaks off negotiations to back their own ticket!</b></font>";
-            showCustomAlert(alertMsg, checkAutoAdvanceTurn);
-            return;
-        }
+    if (oppEval.appendAlertMsg) {
+        alertMsg += oppEval.appendAlertMsg;
     }
 
     saveCampaignState();
     updateUI();
+
+    if (oppEval.abortTurnAdvance) {
+        showCustomAlert(alertMsg, checkAutoAdvanceTurn);
+        if (window.OppositionEngine) OppositionEngine.flushPopups();
+        return;
+    }
 
     // Deletes leverage note if line is crossed
     if (!isLineCrossed) {
@@ -3625,6 +3415,7 @@ window.executeFactionAction = function(factionKey, interactionId, finalCost) {
     }
 
     showCustomAlert(alertMsg, checkAutoAdvanceTurn);
+    if (window.OppositionEngine) OppositionEngine.flushPopups();
 };
 
 // Pay for and enact a decree
@@ -3652,6 +3443,8 @@ window.executeDecree = function(type) {
     logPCChange(-actionCost, 'decree:' + type);
     activeDecrees[type] = true;
     turnExecutiveUsed = true;
+
+    const advSeatSnap = window.AdversaryEngine ? AdversaryEngine.snapshotSeats() : null;
 
     // 1. Handle Faction Bans & Dynamic Seat Redistribution
     if (Array.isArray(decreeDef.banFactions)) {
@@ -3692,6 +3485,8 @@ window.executeDecree = function(type) {
         }
     }
 
+    if (window.AdversaryEngine) AdversaryEngine.recordSeatTransfer(advSeatSnap, type);
+
     // 3. Apply Locks, Floors, Caps & Penalties
     const locks = decreeDef.locks;
     if (locks) {
@@ -3726,10 +3521,13 @@ window.executeDecree = function(type) {
         stats.mil = Math.round(factions['abri'].affinity);
     }
 
+    if (window.AdversaryEngine) AdversaryEngine.onDecreeEnacted(type, decreeDef);
+
     lastRenderedPortraitSignature = "";
     saveCampaignState();
     updateUI();
     showCustomAlert(decreeDef.alertMsg || "Decree enacted.", checkAutoAdvanceTurn);
+    if (window.AdversaryEngine) AdversaryEngine.flushPopups();
 };
 
 // Pay for and apply a routine action
@@ -3792,9 +3590,11 @@ window.executeAction = function(type) {
 
     actionCooldowns[type] = actionDef.cooldown || 2;
 
+    if (window.AdversaryEngine) AdversaryEngine.onActionExecuted(type);
     saveCampaignState();
     updateUI();
     showCustomAlert(alertMsg, checkAutoAdvanceTurn);
+    if (window.AdversaryEngine) AdversaryEngine.flushPopups();
 };
 
 

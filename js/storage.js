@@ -10,10 +10,12 @@ const CUSTOM_BG_KEY = 'habibie_custom_bg';
 const CAMPAIGN_SAVE_KEY = 'habibie_active_campaign_v1';
 
 // Save the current campaign to localStorage
+// Save the current campaign to localStorage
 window.saveCampaignState = function() {
     if (!gameStarted || currentTurn >= MAX_TURNS) return;
     try {
         const curEv = events[currentTurn - 1];
+        const oppState = window.OppositionEngine ? OppositionEngine.getState() : null;
         const payload = {
             timestamp: Date.now(),
             currentTurn,
@@ -23,6 +25,8 @@ window.saveCampaignState = function() {
             showOptionEffects,
             actionCooldowns,
             actionUsageCount,
+            factionCooldowns: typeof factionCooldowns !== 'undefined' ? factionCooldowns : {},
+            factionUsageCount: typeof factionUsageCount !== 'undefined' ? factionUsageCount : {},
             turnExecutiveUsed,
             turnFactionUsed,
             activeDecrees,
@@ -42,6 +46,8 @@ window.saveCampaignState = function() {
             sp3UpheldWithHighCendana,
             helpedRaisSpeaker,
             pcLog: window.pcLog || [],
+            opposition: oppState,
+            adversary: oppState, // Legacy key kept for backward compatibility
             lang: currentLang,
             curEventShuffledIndices: curEv ? curEv.shuffledIndices : null
         };
@@ -94,6 +100,8 @@ window.continueSavedCampaign = async function() {
 
     actionCooldowns = data.actionCooldowns || {};
     actionUsageCount = data.actionUsageCount || {};
+    factionCooldowns = data.factionCooldowns || {};
+    factionUsageCount = data.factionUsageCount || {};
     turnExecutiveUsed = Boolean(data.turnExecutiveUsed);
     turnFactionUsed = Boolean(data.turnFactionUsed);
     activeDecrees = data.activeDecrees || {};
@@ -106,15 +114,28 @@ window.continueSavedCampaign = async function() {
     factions = data.factions;
     portraitFactions = Array.isArray(data.portraitFactions) ? data.portraitFactions : [...INITIAL_PORTRAIT_FACTIONS];
 
-    window.wirantoLocked = data.wirantoLocked !== undefined ? Boolean(data.wirantoLocked) : true;
-    window.wirantoStrain = Number(data.wirantoStrain) || 0;
-
     lowestGovStability = data.lowestGovStability !== undefined ? data.lowestGovStability : 100;
     bankBaliCleanSteps = data.bankBaliCleanSteps || {};
     timorPromiseSteps = data.timorPromiseSteps || {};
     sp3UpheldWithHighCendana = Boolean(data.sp3UpheldWithHighCendana);
     helpedRaisSpeaker = Boolean(data.helpedRaisSpeaker);
     window.pcLog = Array.isArray(data.pcLog) ? data.pcLog : [];
+
+    // Restore opposition state (supports both new `opposition` key and legacy `adversary` + top-level Wiranto fields)
+    const savedOpp = Object.assign({}, data.opposition || data.adversary || {});
+    if (savedOpp.wirantoLocked === undefined && data.wirantoLocked !== undefined) {
+        savedOpp.wirantoLocked = Boolean(data.wirantoLocked);
+    }
+    if (savedOpp.wirantoStrain === undefined && data.wirantoStrain !== undefined) {
+        savedOpp.wirantoStrain = Number(data.wirantoStrain) || 0;
+    }
+    if (window.OppositionEngine) {
+        OppositionEngine.restoreState(savedOpp);
+    } else {
+        window.wirantoLocked = savedOpp.wirantoLocked !== undefined ? Boolean(savedOpp.wirantoLocked) : true;
+        window.wirantoStrain = Number(savedOpp.wirantoStrain) || 0;
+    }
+
     window.resolvedEventTurn = 0;
     window.electionPanelSnapshot = null;
 

@@ -13,6 +13,7 @@ function randInt(min, max) {
 window.exitDebugElectionToMenu = function() {
     debugRestoreSaving();
     window.debugHorseActive = false;
+    if (window.OppositionEngine) OppositionEngine.reset();
     const mprDash = document.getElementById('mpr-dashboard');
     const leftPanel = document.getElementById('left-panel');
     const mainPanel = document.getElementById('main-panel');
@@ -134,6 +135,7 @@ window.runDebugElection = function(preset = 'pure_random') {
         stats.mil = Math.round(factions['abri'].affinity);
     }
 
+    if (window.OppositionEngine) OppositionEngine.reset();
     gameStarted = true;
     currentTurn = events.length + 1;
     updateUI();
@@ -272,7 +274,10 @@ window.runDebugHorseTrading = function(mood, national, pc) {
     lastRenderedPortraitSignature = "";
     window.horseTradeCounts = {};
     window.lastHorseTradeTicker = "";
-    window.wirantoStrain = 0;
+    window.horseTradeCounts = {};
+    window.lastHorseTradeTicker = "";
+    window.pcLog = [];
+    if (window.OppositionEngine) OppositionEngine.reset();
     window.pcLog = [];
 
     // Randomized national metrics and faction loyalty
