@@ -177,9 +177,14 @@ function getQualitativeMagnitude(absVal) {
     return "Greatly";
 }
 
+function getDashboardStatTiers(statKey) {
+    const activeStats = isPostElectionStage ? postStageDashboardStats : dashboardStats;
+    return activeStats[statKey] || dashboardStats[statKey];
+}
+
 // Look up the descriptive tier name for a stat value
 function getPlainStatTierName(statKey, val) {
-    const statTiers = dashboardStats[statKey];
+    const statTiers = getDashboardStatTiers(statKey);
     if (!statTiers || statTiers.length === 0) return "a stable level";
     for (let i = 0; i < statTiers.length; i++) {
         if (val >= statTiers[i].min) return statTiers[i].text;
@@ -267,6 +272,8 @@ let currentTurn = 1;
 let MAX_TURNS = 20;
 let isActionPhase = false;
 let gameStarted = false;
+let isPostElectionStage = false;
+let postStageParliamentSupport = 50;
 let globalMalus = 0;
 let libraryData = [];
 let tutorialPages = [];
@@ -361,6 +368,7 @@ let initialFactionsSnapshot = {};
 let events = [];
 let musicTracks = [];
 let dashboardStats = {};
+let postStageDashboardStats = {};
 let portraitFactions = [...INITIAL_PORTRAIT_FACTIONS];
 
 // Tally Speed, Military Lock & Mobile Touch State
@@ -458,6 +466,7 @@ window.returnToTitleScreen = function() {
     window.lastElectionSummary = null;
     window.electionPanelSnapshot = null;
     window.epilogueActive = false;
+    isPostElectionStage = false;
 
     syncSidebarVisibility();
     updateUI();
@@ -574,7 +583,7 @@ async function loadLocalizedAssets(onStepProgress) {
 
     const [
         cfgData, achvData, evData, routData, decData,
-        tutData, histData, libData, persData, stData, credData, updData, advData,
+        tutData, histData, libData, persData, stData, postStData, credData, updData, advData,
         ...factionResults
     ] = await Promise.all([
         trackedFetch('config.json', fallbackConfig),
@@ -587,6 +596,7 @@ async function loadLocalizedAssets(onStepProgress) {
         trackedFetch('localization/library.json', []),
         trackedFetch('localization/persons.json', []),
         trackedFetch('stats.json', {}),
+        trackedFetch('stats_post.json', {}),
         trackedFetch('credits.json', {}),
         trackedFetch('updates.json', null),
         fetchJSONSafe('data/language/english/opposition.json', null).then(res => { step(); return res; }),
@@ -665,6 +675,7 @@ async function loadLocalizedAssets(onStepProgress) {
     historyPages = histData || [];
     libraryData = [...(libData || []), ...(persData || [])];
     dashboardStats = stData || {};
+    postStageDashboardStats = postStData || {};
     creditsData = credData || {};
     updatesData = updData || null;
     window.advTextData = advData || null;   // opposition moves + historical background news (adversaries.js)
@@ -1011,7 +1022,7 @@ function formatEffectString(effects) {
 
 // CORE LOGIC FUNCTIONS (WITH QUALITATIVE TREND ARROWS)
 function getVagueStatText(statKey, val) {
-    const statTiers = dashboardStats[statKey];
+    const statTiers = getDashboardStatTiers(statKey);
     let baseHTML = `<font color="#8B0000">Unknown</font>`;
     if (statTiers) {
         for (let i = 0; i < statTiers.length; i++) {
@@ -1228,6 +1239,18 @@ function updateUI() {
     uiEl('val-intl').innerHTML = getVagueStatText('intl', stats.intl);
     uiEl('val-stab').innerHTML = getVagueStatText('stab', stats.stab);
     uiEl('val-cendana').innerHTML = getVagueStatText('cendana', stats.cendana);
+    uiEl('val-parl').innerHTML = getVagueStatText('parl', postStageParliamentSupport);
+
+    const cendanaRow = uiEl('stat-row-cendana');
+    if (cendanaRow) cendanaRow.style.display = isPostElectionStage ? 'none' : '';
+
+    const abriStillInParliament = Boolean(factions.abri && factions.abri.seats > 0 && !bannedFactions.abri);
+    const militarySupportRemainsRelevant = !activeDecrees.police_military_separation || abriStillInParliament;
+    const militaryRow = uiEl('stat-row-mil');
+    if (militaryRow) militaryRow.style.display = !isPostElectionStage || militarySupportRemainsRelevant ? '' : 'none';
+
+    const parliamentRow = uiEl('stat-row-parl');
+    if (parliamentRow) parliamentRow.style.display = isPostElectionStage ? '' : 'none';
 
     const govStabElement = uiEl('val-gov-stab');
     if (govStabElement) {
@@ -1253,8 +1276,10 @@ function updateUI() {
     }
 
     if (gameStarted) {
-        uiEl('turn-display').innerText = currentTurn;
-        if (currentTurn <= events.length) {
+        uiEl('turn-display').innerText = isPostElectionStage ? '2' : currentTurn;
+        if (isPostElectionStage) {
+            uiEl('date-display').innerText = '1999–2004 (Placeholder)';
+        } else if (currentTurn <= events.length) {
             uiEl('date-display').innerText = events[currentTurn - 1].date;
         } else {
             uiEl('date-display').innerText = "Oct 19, 1999 (General Session)";

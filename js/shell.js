@@ -16,6 +16,7 @@ const DEFAULT_LOADING_FILES = [
     "localization/history.json",
     "localization/library.json",
     "stats.json",
+    "stats_post.json",
     "credits.json",
     "updates.json",
     "fraksi/pdip.json",

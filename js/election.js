@@ -850,6 +850,35 @@ function buildEpilogueImageHTML(sec) {
     </div></center>`;
 }
 
+const POST_ELECTION_STAGE_PLACEHOLDER = {
+    title: '1999–2004: The Next Stage',
+    period: 'October 1999–2004',
+    parliamentSupport: 50,
+    description: 'This is a placeholder for the next playable stage. Add its events, choices, and stage-specific rules here.'
+};
+
+window.startPostElectionStage = function() {
+    const mainPanel = document.getElementById('main-panel');
+    const mprDashboard = document.getElementById('mpr-dashboard');
+    if (!mainPanel) return;
+
+    window.epilogueActive = false;
+    isPostElectionStage = true;
+    postStageParliamentSupport = POST_ELECTION_STAGE_PLACEHOLDER.parliamentSupport;
+    syncSidebarVisibility();
+    if (mprDashboard) mprDashboard.style.display = 'none';
+    mainPanel.style.width = '';
+    mainPanel.innerHTML = `<center><h2>${POST_ELECTION_STAGE_PLACEHOLDER.title}</h2></center>
+        <div class="faction-summary" style="padding: 15px; font-size: 13px; line-height: 1.6;">
+            <b>${POST_ELECTION_STAGE_PLACEHOLDER.period}</b><br><br>
+            ${POST_ELECTION_STAGE_PLACEHOLDER.description}
+        </div>
+        <center><button style="width: 280px; text-align: center;" onclick="returnToPreviousView()">Back to Election Results</button></center>`;
+    updateUI();
+    if (typeof updateMobileStatusBar === 'function') updateMobileStatusBar();
+    scrollMainPanelToTop();
+};
+
 // Show the epilogue: replaces the whole game window with a Situation-style panel
 window.showEpilogue = function() {
     const sum = window.lastElectionSummary;
@@ -885,6 +914,7 @@ window.showEpilogue = function() {
     html += '<center>';
     html += '<button style="width: 300px; text-align: center; margin-bottom: 8px; --py: 10px; --px: 10px;" onclick="returnToTitleScreen()">Return to Title Screen</button><br>';
     html += '<button style="width: 300px; text-align: center; background-color: #ff9999; --py: 10px; --px: 10px;" onclick="closeEpilogue()">Back to Results</button>';
+    html += '<button style="width: 300px; text-align: center; --py: 10px; --px: 10px;" onclick="startPostElectionStage()">Continue ? <font color=\"#ff9999\"><b>(alpha works)</b></font></button>';
     html += '</center>';
     mainPanel.innerHTML = html;
     scrollMainPanelToTop();
