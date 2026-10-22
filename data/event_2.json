@@ -1,7 +1,6 @@
 {
   "id": "ev_post_election",
   "title": "The Presidential Succession",
-  "period": "October 1999–2004",
   "description": "The Assembly has accepted your accountability speech. Choose a candidate to lead your campaign for the presidency through 2004. Three political challenges stand between you and the MPR's vote.",
   "parliamentSupport": 50,
   "overwhelmingVictoryMessage": "Your overwhelming victory secures your mandate through 2004. No further presidential election is held during this stage.",
@@ -9,6 +8,17 @@
   "electionTitle": "The MPR Presidential Election",
   "electionDescription": "The 700 MPR delegates cast their votes to decide who will serve as President until 2004. Your campaign's support among each faction determines its chance of voting for your candidate.",
   "candidates": [
+    {
+      "id": "habibie",
+      "name": "Bacharuddin Jusuf Habibie",
+      "portrait": "photo/habibie.png",
+      "description": "Placeholder biography: PDI-P's leader and the leading voice of the nationalist opposition.",
+      "supportByFaction": {
+        "pdip": 92, "golkar_akbar": 30, "golkar_habibie": 22, "poros_tengah": 42,
+        "ppp": 28, "pkb": 45, "abri": 30, "utusan_daerah": 48,
+        "utusan_golongan": 42, "other_parties": 55
+      }
+    },
     {
       "id": "megawati",
       "name": "Megawati Sukarnoputri",
@@ -108,7 +118,7 @@
         {
           "text": "Challenge the Assembly to honor the voters' reform mandate.",
           "supportChanges": { "pdip": 3, "poros_tengah": 3, "pkb": 2, "other_parties": 2 },
-          "reaction": "The final appeal is delivered. Delegates take their seats for the presidential ballot."
+          "reaction": "KOMPAS: The final appeal is delivered. Delegates take their seats for the presidential ballot."
         }
       ]
     }
