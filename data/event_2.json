@@ -1,0 +1,116 @@
+{
+  "id": "ev_post_election",
+  "title": "The Presidential Succession",
+  "period": "October 1999–2004",
+  "description": "The Assembly has accepted your accountability speech. Choose a candidate to lead your campaign for the presidency through 2004. Three political challenges stand between you and the MPR's vote.",
+  "parliamentSupport": 50,
+  "overwhelmingVictoryMessage": "Your overwhelming victory secures your mandate through 2004. No further presidential election is held during this stage.",
+  "characterPrompt": "Choose the candidate you will lead through the presidential election.",
+  "electionTitle": "The MPR Presidential Election",
+  "electionDescription": "The 700 MPR delegates cast their votes to decide who will serve as President until 2004. Your campaign's support among each faction determines its chance of voting for your candidate.",
+  "candidates": [
+    {
+      "id": "megawati",
+      "name": "Megawati Sukarnoputri",
+      "portrait": "photo/megawati.png",
+      "description": "Placeholder biography: PDI-P's leader and the leading voice of the nationalist opposition.",
+      "supportByFaction": {
+        "pdip": 92, "golkar_akbar": 30, "golkar_habibie": 22, "poros_tengah": 42,
+        "ppp": 28, "pkb": 45, "abri": 30, "utusan_daerah": 48,
+        "utusan_golongan": 42, "other_parties": 55
+      }
+    },
+    {
+      "id": "amien_rais",
+      "name": "Amien Rais",
+      "portrait": "photo/rais.png",
+      "description": "Placeholder biography: PAN's chairman and a central organizer of the Islamic-oriented Central Axis coalition.",
+      "supportByFaction": {
+        "pdip": 28, "golkar_akbar": 35, "golkar_habibie": 30, "poros_tengah": 92,
+        "ppp": 78, "pkb": 68, "abri": 35, "utusan_daerah": 50,
+        "utusan_golongan": 58, "other_parties": 55
+      }
+    },
+    {
+      "id": "gus_dur",
+      "name": "Abdurrahman Wahid (Gus Dur)",
+      "portrait": "photo/gus_dur.png",
+      "description": "Placeholder biography: Nahdlatul Ulama leader and a potential consensus candidate. Portrait placeholder until an image is added.",
+      "supportByFaction": {
+        "pdip": 45, "golkar_akbar": 42, "golkar_habibie": 48, "poros_tengah": 72,
+        "ppp": 65, "pkb": 95, "abri": 44, "utusan_daerah": 55,
+        "utusan_golongan": 70, "other_parties": 60
+      }
+    },
+    {
+      "id": "wiranto",
+      "name": "Wiranto",
+      "portrait": "photo/wiranto.png",
+      "description": "Placeholder biography: ABRI's commander, available only if the military has distanced itself from Habibie and both military reforms remain unenacted.",
+      "supportByFaction": {
+        "pdip": 18, "golkar_akbar": 52, "golkar_habibie": 72, "poros_tengah": 35,
+        "ppp": 32, "pkb": 35, "abri": 95, "utusan_daerah": 62,
+        "utusan_golongan": 58, "other_parties": 42
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "post_event_1",
+      "date": "October 20, 1999",
+      "title": "The Coalition Question",
+      "image": "photo/events/1.png",
+      "description": "Your candidate must persuade a divided Assembly that a new presidency can hold the republic together. How will the campaign open?",
+      "options": [
+        {
+          "text": "Promise a broad national-unity cabinet.",
+          "supportChanges": { "golkar_akbar": 4, "golkar_habibie": 4, "utusan_daerah": 3, "other_parties": 3 },
+          "reaction": "Party leaders welcome the promise, while asking how cabinet posts will be divided."
+        },
+        {
+          "text": "Put reform and civil liberties first.",
+          "supportChanges": { "pdip": 4, "poros_tengah": 2, "other_parties": 4, "utusan_golongan": 2 },
+          "reaction": "Reform groups applaud the pledge, but some establishment delegates remain wary."
+        }
+      ]
+    },
+    {
+      "id": "post_event_2",
+      "date": "October 20, 1999",
+      "title": "The Cabinet Question",
+      "image": "photo/events/1.png",
+      "description": "Delegates want to know who will hold the key ministries in the next government. What does your candidate offer?",
+      "options": [
+        {
+          "text": "Share cabinet responsibilities across the major blocs.",
+          "supportChanges": { "golkar_akbar": 3, "golkar_habibie": 3, "poros_tengah": 2, "ppp": 2, "pkb": 2 },
+          "reaction": "The coalition talks gain momentum, though each bloc expects a meaningful role."
+        },
+        {
+          "text": "Keep the cabinet compact and focused on reform.",
+          "supportChanges": { "pdip": 3, "other_parties": 3, "utusan_golongan": 2 },
+          "reaction": "The reform pledge energizes civil society delegates, but party bosses ask for guarantees."
+        }
+      ]
+    },
+    {
+      "id": "post_event_3",
+      "date": "October 20, 1999",
+      "title": "The Final Appeal",
+      "image": "photo/events/1.png",
+      "description": "The MPR is preparing to vote. Your candidate has one final opportunity to win over undecided delegates.",
+      "options": [
+        {
+          "text": "Make a personal appeal for unity and constitutional stability.",
+          "supportChanges": { "utusan_daerah": 4, "utusan_golongan": 3, "golkar_habibie": 2, "abri": 2 },
+          "reaction": "The final appeal is delivered. Delegates take their seats for the presidential ballot."
+        },
+        {
+          "text": "Challenge the Assembly to honor the voters' reform mandate.",
+          "supportChanges": { "pdip": 3, "poros_tengah": 3, "pkb": 2, "other_parties": 2 },
+          "reaction": "The final appeal is delivered. Delegates take their seats for the presidential ballot."
+        }
+      ]
+    }
+  ]
+}

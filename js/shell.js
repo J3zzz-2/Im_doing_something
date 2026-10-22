@@ -10,6 +10,7 @@ const DEFAULT_LOADING_FILES = [
     "config.json",
     "achievements.json",
     "events.json",
+    "event_2.json",
     "actionphase/routine.json",
     "actionphase/decrees.json",
     "localization/tutorial.json",

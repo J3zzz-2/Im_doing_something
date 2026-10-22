@@ -483,6 +483,9 @@ function runElection() {
         }
 
         const accepted = grandTotalFor > grandTotalAgainst && (!window.AdversaryEngine || AdversaryEngine.meetsQuorum(grandTotalFor));
+        const victoryCategory = accepted
+            ? (grandTotalFor >= 450 ? 'overwhelming' : grandTotalFor >= 380 ? 'comfortable' : 'narrow_upset')
+            : 'loss';
         let resHTML = '';
         if (!accepted && grandTotalFor > grandTotalAgainst && window.AdversaryEngine) resHTML += AdversaryEngine.quorumFailureHTML(grandTotalFor);
 
@@ -584,6 +587,7 @@ function runElection() {
 
         window.lastElectionSummary = {
             won: accepted,
+            victoryCategory,
             forVotes: grandTotalFor,
             againstVotes: grandTotalAgainst,
             blankVotes: grandTotalBlank,
@@ -850,30 +854,197 @@ function buildEpilogueImageHTML(sec) {
     </div></center>`;
 }
 
-const POST_ELECTION_STAGE_PLACEHOLDER = {
-    title: '1999–2004: The Next Stage',
-    period: 'October 1999–2004',
-    parliamentSupport: 50,
-    description: 'This is a placeholder for the next playable stage. Add its events, choices, and stage-specific rules here.'
-};
+let postElectionStageConfig = null;
+let postElectionStageState = null;
 
-window.startPostElectionStage = function() {
+function getPostElectionCandidates(stageConfig) {
+    const available = Array.isArray(stageConfig.candidates) ? stageConfig.candidates : [];
+    return available.filter(candidate => {
+        if (candidate.id === 'amien_rais' && activeDecrees.enforce_asas_tunggal_ban) return false;
+        if (candidate.id === 'gus_dur' && !activeDecrees.enforce_asas_tunggal_ban) return false;
+        if (candidate.id === 'wiranto') {
+            return !window.wirantoLocked &&
+                !activeDecrees.police_military_separation &&
+                !activeDecrees.abolish_abri_mpr_seats;
+        }
+        return true;
+    });
+}
+
+function renderPostElectionStageStart() {
+    const mainPanel = document.getElementById('main-panel');
+    if (!mainPanel || !postElectionStageConfig) return;
+
+    const config = postElectionStageConfig;
+    const summary = window.lastElectionSummary;
+    let content = `<b>${config.period}</b><br><br>${config.description}`;
+    if (summary.victoryCategory === 'overwhelming') {
+        content += `<br><br><b>${config.overwhelmingVictoryMessage}</b>`;
+    } else {
+        const candidates = getPostElectionCandidates(config);
+        postElectionStageState = { candidates, candidate: null, supportByFaction: null, eventIndex: 0 };
+        content += `<br><br><label for="post-election-candidate"><b>${config.characterPrompt}</b></label>
+            <br><select id="post-election-candidate" style="min-width: 260px; margin-top: 8px;">
+                <option value="">Choose a candidate</option>
+                ${candidates.map(candidate => `<option value="${escapeAttr(candidate.id)}">${candidate.name}</option>`).join('')}
+            </select>
+            <div id="post-election-character-preview" style="margin-top: 14px; text-align: center;"></div>`;
+    }
+
+    mainPanel.innerHTML = `<center><h2>${config.title}</h2></center>
+        <div class="faction-summary" style="padding: 15px; font-size: 13px; line-height: 1.6;">${content}</div>
+        <center><button style="width: 280px; text-align: center;" onclick="closeEpilogue()">Back to Election Results</button></center>`;
+
+    const candidateSelect = document.getElementById('post-election-candidate');
+    if (candidateSelect) candidateSelect.addEventListener('change', () => previewPostElectionCandidate(candidateSelect.value));
+    updateUI();
+    scrollMainPanelToTop();
+}
+
+window.startPostElectionStage = async function() {
     const mainPanel = document.getElementById('main-panel');
     const mprDashboard = document.getElementById('mpr-dashboard');
-    if (!mainPanel) return;
+    if (!mainPanel || !window.lastElectionSummary || !window.lastElectionSummary.won) return;
+
+    const stageConfig = await fetchJSONSafe('data/event_2.json', null);
+    const validStageConfig = stageConfig &&
+        Array.isArray(stageConfig.events) &&
+        stageConfig.events.every(event => event && Array.isArray(event.options) && event.options.length > 0) &&
+        Array.isArray(stageConfig.candidates) &&
+        stageConfig.candidates.every(candidate =>
+            candidate && candidate.id && candidate.name && candidate.portrait &&
+            candidate.description && candidate.supportByFaction
+        );
+    if (!validStageConfig) {
+        showCustomAlert('Post-election stage data is missing or invalid in data/event_2.json.', null);
+        return;
+    }
 
     window.epilogueActive = false;
     isPostElectionStage = true;
-    postStageParliamentSupport = POST_ELECTION_STAGE_PLACEHOLDER.parliamentSupport;
+    window.postElectionSuccessor = null;
+    window.postElectionOutcome = null;
+    postStageParliamentSupport = stageConfig.parliamentSupport;
+    postElectionStageConfig = stageConfig;
+    postElectionStageState = null;
     syncSidebarVisibility();
     if (mprDashboard) mprDashboard.style.display = 'none';
     mainPanel.style.width = '';
-    mainPanel.innerHTML = `<center><h2>${POST_ELECTION_STAGE_PLACEHOLDER.title}</h2></center>
-        <div class="faction-summary" style="padding: 15px; font-size: 13px; line-height: 1.6;">
-            <b>${POST_ELECTION_STAGE_PLACEHOLDER.period}</b><br><br>
-            ${POST_ELECTION_STAGE_PLACEHOLDER.description}
+    renderPostElectionStageStart();
+    if (typeof updateMobileStatusBar === 'function') updateMobileStatusBar();
+};
+
+window.previewPostElectionCandidate = function(candidateId) {
+    if (!postElectionStageState) return;
+    const candidate = postElectionStageState.candidates.find(entry => entry.id === candidateId);
+    const preview = document.getElementById('post-election-character-preview');
+    if (!candidate || !preview) {
+        if (preview) preview.innerHTML = '';
+        postElectionStageState.candidate = null;
+        return;
+    }
+
+    postElectionStageState.candidate = candidate;
+    postElectionStageState.supportByFaction = { ...candidate.supportByFaction };
+    window.postElectionSuccessor = candidate.id;
+    preview.innerHTML = `<div style="display: inline-block; width: 180px; height: 220px; position: relative; border: 3px inset #FFFFFF; background: #A9A9A9; margin-bottom: 10px;">
+            <span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #555;">[ PHOTO:<br>${candidate.name} ]</span>
+            <img src="${escapeAttr(candidate.portrait)}" alt="${escapeAttr(candidate.name)}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
         </div>
-        <center><button style="width: 280px; text-align: center;" onclick="returnToPreviousView()">Back to Election Results</button></center>`;
+        <div style="text-align: left;"><b>${candidate.name}</b><br>${candidate.description}</div>
+        <button type="button" style="margin-top: 12px;" onclick="beginPostElectionEvents()">Continue to the first question</button>`;
+};
+
+function renderPostElectionEvent() {
+    const state = postElectionStageState;
+    const config = postElectionStageConfig;
+    const mainPanel = document.getElementById('main-panel');
+    if (!state || !config || !mainPanel) return;
+
+    const event = config.events[state.eventIndex];
+    if (!event) {
+        runPostElectionPresidentialElection();
+        return;
+    }
+    state.eventResolved = false;
+
+    const image = event.image
+        ? `<center><img src="${escapeAttr(event.image)}" class="event-image" alt="${escapeAttr(event.title)}" style="width: 400px; height: 200px; object-fit: cover; border: 3px inset #FFFFFF; background: #A9A9A9; margin-bottom: 15px;" onerror="this.style.display='none'"></center>`
+        : '';
+    mainPanel.innerHTML = `<center><h2>${event.title}</h2><div><b>Question ${state.eventIndex + 1} of ${config.events.length}</b></div></center>
+        ${image}
+        <p style="text-align: justify; font-family: MS Sans Serif, sans-serif; font-size: 13px; line-height: 1.5; color: #333;">${event.description}</p>
+        ${event.options.map((option, index) => `<button type="button" onclick="resolvePostElectionStageEvent(${index})">${option.text}</button>`).join('')}`;
+    scrollMainPanelToTop();
+}
+
+window.beginPostElectionEvents = function() {
+    if (!postElectionStageState || !postElectionStageState.candidate) return;
+    if (postElectionStageConfig.events.length === 0) {
+        runPostElectionPresidentialElection();
+        return;
+    }
+    postElectionStageState.eventIndex = 0;
+    renderPostElectionEvent();
+};
+
+window.resolvePostElectionStageEvent = function(optionIndex) {
+    const state = postElectionStageState;
+    const config = postElectionStageConfig;
+    const event = state && config ? config.events[state.eventIndex] : null;
+    const option = event && event.options ? event.options[optionIndex] : null;
+    if (!option || !state.supportByFaction || state.eventResolved) return;
+    state.eventResolved = true;
+
+    Object.entries(option.supportChanges || {}).forEach(([factionKey, change]) => {
+        if (typeof change !== 'number' || !Number.isFinite(change)) return;
+        const current = state.supportByFaction[factionKey] ?? (factions[factionKey] ? factions[factionKey].affinity : 50);
+        state.supportByFaction[factionKey] = Math.max(0, Math.min(100, current + change));
+    });
+
+    const advance = () => {
+        state.eventIndex += 1;
+        renderPostElectionEvent();
+    };
+    if (option.reaction) showCustomAlert(option.reaction, advance);
+    else advance();
+};
+
+function runPostElectionPresidentialElection() {
+    const state = postElectionStageState;
+    const config = postElectionStageConfig;
+    const mainPanel = document.getElementById('main-panel');
+    if (!state || !state.candidate || !config || !mainPanel) return;
+
+    let totalVotes = 0;
+    let votesFor = 0;
+    for (const factionKey of portraitFactions) {
+        const faction = factions[factionKey];
+        if (!faction || faction.seats <= 0 || bannedFactions[factionKey]) continue;
+        const support = Math.max(0, Math.min(100,
+            state.supportByFaction[factionKey] ?? faction.affinity));
+        for (let seat = 0; seat < faction.seats; seat++) {
+            totalVotes += 1;
+            if (Math.random() * 100 < support) votesFor += 1;
+        }
+    }
+
+    const votesAgainst = totalVotes - votesFor;
+    const won = votesFor > votesAgainst;
+    window.postElectionOutcome = won ? 'president' : 'opposition';
+    const candidate = state.candidate;
+    const outcomeText = won
+        ? `${candidate.name} wins the MPR presidential election and will serve as President through 2004.`
+        : `${candidate.name} loses the presidential election and moves into the opposition.`;
+    const image = `<center><img src="${escapeAttr(candidate.portrait)}" alt="${escapeAttr(candidate.name)}" style="width: 180px; height: 220px; object-fit: cover; border: 3px inset #FFFFFF; background: #A9A9A9;" onerror="this.style.display='none'"></center>`;
+    mainPanel.innerHTML = `<center><h2>${config.electionTitle}</h2></center>
+        <p style="text-align: justify;">${config.electionDescription}</p>${image}
+        <div class="faction-summary" style="padding: 15px; text-align: center;">
+            <h3>${won ? 'ELECTED PRESIDENT' : 'ELECTION DEFEAT'}</h3>
+            <b>${candidate.name}</b><br>${votesFor} FOR &bull; ${votesAgainst} AGAINST<br><br>
+            ${outcomeText}
+        </div>
+        <center><button type="button" onclick="returnToTitleScreen()">Return to Title Screen</button></center>`;
     updateUI();
     if (typeof updateMobileStatusBar === 'function') updateMobileStatusBar();
     scrollMainPanelToTop();
@@ -914,7 +1085,9 @@ window.showEpilogue = function() {
     html += '<center>';
     html += '<button style="width: 300px; text-align: center; margin-bottom: 8px; --py: 10px; --px: 10px;" onclick="returnToTitleScreen()">Return to Title Screen</button><br>';
     html += '<button style="width: 300px; text-align: center; background-color: #ff9999; --py: 10px; --px: 10px;" onclick="closeEpilogue()">Back to Results</button>';
-    html += '<button style="width: 300px; text-align: center; --py: 10px; --px: 10px;" onclick="startPostElectionStage()">Continue ? <font color=\"#ff9999\"><b>(alpha works)</b></font></button>';
+    if (sum && sum.won) {
+        html += '<button style="width: 300px; text-align: center; --py: 10px; --px: 10px;" onclick="startPostElectionStage()">Continue ? <font color=\"#ff9999\"><b>(alpha works)</b></font></button>';
+    }
     html += '</center>';
     mainPanel.innerHTML = html;
     scrollMainPanelToTop();
